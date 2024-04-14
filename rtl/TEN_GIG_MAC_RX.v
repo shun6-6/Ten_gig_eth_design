@@ -27,7 +27,7 @@ module TEN_GIG_MAC_RX(
     input  [7 :0]   i_xgmii_rxc         ,
     
     output [63:0]   m_axis_rdata        ,
-    output [31:0]   m_axis_ruser        ,//用户自定义{r_src_mac[15:0],r_type}
+    output [79:0]   m_axis_ruser        ,//用户自定义{16'dlen,r_src_mac[47:0],16'dr_type}
     output [7 :0]   m_axis_rkeep        ,
     output          m_axis_rlast        ,
     output          m_axis_rvalid       ,
@@ -54,12 +54,13 @@ reg  [7 :0]     ri_xgmii_rxc_2d     ;
 
 reg  [63:0]     rm_axis_rdata       ;
 reg  [63:0]     rm_axis_rdata_1d    ;
-reg  [31:0]     rm_axis_ruser       ;
+reg  [79:0]     rm_axis_ruser       ;
 reg  [7 :0]     rm_axis_rkeep       ;
 reg  [7 :0]     rm_axis_rkeep_1d    ;
 reg             rm_axis_rlast       ;
 reg             rm_axis_rlast_1d    ;
 reg             rm_axis_rvalid      ;
+reg  [15:0]     r_data_len          ;
 //解析接收数据
 reg  [15:0]     r_recv_cnt          ;
 reg             r_comma             ;
@@ -576,13 +577,19 @@ end
 always @(posedge i_clk or posedge i_rst)begin
     if(i_rst)
         rm_axis_ruser <= 'd0;
-    else if(r_sof_location == 7 && r_recv_cnt == 2)
-        rm_axis_ruser <= {r_src_mac,ri_xgmii_rxd_1d[23:8]};
-    else if(r_sof_location == 3 && r_recv_cnt == 3)
-        rm_axis_ruser <= {r_src_mac,ri_xgmii_rxd_1d[55:40]};
     else
-        rm_axis_ruser <= rm_axis_ruser;
+        rm_axis_ruser <= {r_data_len + 16'd1,r_src_mac,r_type};
 end
 
+always @(posedge i_clk or posedge i_rst)begin
+    if(i_rst)
+        r_data_len <= 'd0;
+    else if(rm_axis_rlast_1d)
+        r_data_len <= 'd0;
+    else if((r_data_run_2d && !r_data_run_3d) || r_data_len)
+        r_data_len <= r_data_len + 1;
+    else
+        r_data_len <= r_data_len;
+end
 
 endmodule

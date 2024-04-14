@@ -38,27 +38,22 @@ assign o_tx_disable = 0;
 wire            w_sys_clk       ;
 wire            w_sys_rst       ;
 wire            w_gt_refclk     ;
-(* MARK_DEBUG = "TRUE" *)wire            w_qplllock      ;
+wire            w_qplllock      ;
 wire            w_qplloutclk    ;
 wire            w_qplloutrefclk ;
 wire            w_qpllreset     ;
 
 wire            w_xgmii_clk     ;
 wire            w_xgmii_rst     ;
-(* MARK_DEBUG = "TRUE" *)wire [63 : 0]   w_xgmii_txd     ;
-(* MARK_DEBUG = "TRUE" *)wire [7  : 0]   w_xgmii_txc     ;
-(* MARK_DEBUG = "TRUE" *)wire [63 : 0]   w_xgmii_rxd     ;
-(* MARK_DEBUG = "TRUE" *)wire [7  : 0]   w_xgmii_rxc     ;
+wire [63 : 0]   w_xgmii_txd     ;
+wire [7  : 0]   w_xgmii_txc     ;
+wire [63 : 0]   w_xgmii_rxd     ;
+wire [7  : 0]   w_xgmii_rxc     ;
 
-(* MARK_DEBUG = "TRUE" *)wire            w_block_sync    ;
-(* MARK_DEBUG = "TRUE" *)wire            w_rst_done      ;
-(* MARK_DEBUG = "TRUE" *)wire            w_pma_link      ;
-(* MARK_DEBUG = "TRUE" *)wire            w_pcs_rx_link   ;
-
-wire [63:0]     w_xgmii_rxd_little  ;
-wire [7 :0]     w_xgmii_rxc_little  ;
-wire [63:0]     w_xgmii_txd_little  ;
-wire [7 :0]     w_xgmii_txc_little  ;
+wire            w_block_sync    ;
+wire            w_rst_done      ;
+wire            w_pma_link      ;
+wire            w_pcs_rx_link   ;
 
 wire [63:0]     m_axis_rdata        ;
 wire [31:0]     m_axis_ruser        ;
@@ -72,15 +67,6 @@ wire            s_axis_tlast        ;
 wire            s_axis_tvalid       ;
 wire            s_axis_tready       ;
 
-
-assign w_xgmii_rxd   = {w_xgmii_rxd_little[7 :0],w_xgmii_rxd_little[15:8],w_xgmii_rxd_little[23:16],w_xgmii_rxd_little[31:24],
-                        w_xgmii_rxd_little[39:32],w_xgmii_rxd_little[47:40],w_xgmii_rxd_little[55:48],w_xgmii_rxd_little[63:56]};
-assign w_xgmii_rxc   = {w_xgmii_rxc_little[0],w_xgmii_rxc_little[1],w_xgmii_rxc_little[2],w_xgmii_rxc_little[3],
-                        w_xgmii_rxc_little[4],w_xgmii_rxc_little[5],w_xgmii_rxc_little[6],w_xgmii_rxc_little[7]};
-assign w_xgmii_txd_little = {w_xgmii_txd[7 :0],w_xgmii_txd[15:8],w_xgmii_txd[23:16],w_xgmii_txd[31:24],
-                            w_xgmii_txd[39:32],w_xgmii_txd[47:40],w_xgmii_txd[55:48],w_xgmii_txd[63:56]};
-assign w_xgmii_txc_little = {w_xgmii_txc[0],w_xgmii_txc[1],w_xgmii_txc[2],w_xgmii_txc[3],
-                            w_xgmii_txc[4],w_xgmii_txc[5],w_xgmii_txc[6],w_xgmii_txc[7]};
 
 IBUFDS #(
     .DIFF_TERM      ("FALSE"            ), 
@@ -135,15 +121,6 @@ ten_gig_eth_pcs_pma_gt_common_block
 );
 
 
-TenG_PCAPMA_Test TenG_PCAPMA_Test_u0(
-    .i_xgmii_clk                    (w_xgmii_clk        ),
-    .i_xgmii_rst                    (w_xgmii_rst        ),
-    .i_xgmii_rxd                    (w_xgmii_rxd        ),
-    .i_xgmii_rxc                    (w_xgmii_rxc        ),
-    .o_xgmii_txd                    (w_xgmii_txd        ),
-    .o_xgmii_txc                    (w_xgmii_txc        )  
-);  
-
 TEN_GIG_MAC_module TEN_GIG_MAC_module_u0(
     .i_xgmii_clk            (w_xgmii_clk        ),
     .i_xgmii_rst            (w_xgmii_rst        ),
@@ -156,6 +133,8 @@ TEN_GIG_MAC_module TEN_GIG_MAC_module_u0(
     .m_axis_rkeep           (m_axis_rkeep       ),
     .m_axis_rlast           (m_axis_rlast       ),
     .m_axis_rvalid          (m_axis_rvalid      ),
+    .o_crc_error            (),
+    .o_crc_valid            (),
     .s_axis_tdata           (0),
     .s_axis_tuser           (0),
     .s_axis_tkeep           (0),
@@ -179,10 +158,10 @@ TEN_GIG_ETH_PCSPMA TEN_GIG_ETH_PCSPMA_u0(
     .rxn                    (i_gt_rxn           ),
     .i_sim_speedup_control  (0),
     .o_xgmii_clk            (w_xgmii_clk        ),   
-    .i_xgmii_txd            (w_xgmii_txd_little ),
-    .i_xgmii_txc            (w_xgmii_txc_little ),
-    .o_xgmii_rxd            (w_xgmii_rxd_little ),
-    .o_xgmii_rxc            (w_xgmii_rxc_little ),
+    .i_xgmii_txd            (w_xgmii_txd        ),
+    .i_xgmii_txc            (w_xgmii_txc        ),
+    .o_xgmii_rxd            (w_xgmii_rxd        ),
+    .o_xgmii_rxc            (w_xgmii_rxc        ),
     .o_block_sync           (w_block_sync       ),
     .o_rst_done             (w_rst_done         ),
     .o_pma_link             (w_pma_link         ),

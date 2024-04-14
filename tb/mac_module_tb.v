@@ -43,35 +43,79 @@ reg  [63 : 0]   r_xgmii_rxd         ;
 reg  [7  : 0]   r_xgmii_rxc         ;
 
 wire [63:0]     m_axis_rdata        ;
-wire [31:0]     m_axis_ruser        ;
+wire [79:0]     m_axis_ruser        ;
 wire [7 :0]     m_axis_rkeep        ;
 wire            m_axis_rlast        ;
 wire            m_axis_rvalid       ;
+wire            w_crc_error         ;
+wire            w_crc_valid         ;
 wire [63:0]     s_axis_tdata        ;
-wire [31:0]     s_axis_tuser        ;
+wire [79:0]     s_axis_tuser        ;
 wire [7 :0]     s_axis_tkeep        ;
 wire            s_axis_tlast        ;
 wire            s_axis_tvalid       ;
 wire            s_axis_tready       ;
 
-TEN_GIG_MAC_module TEN_GIG_MAC_module_u0(
-    .i_xgmii_clk            (clk                ),
-    .i_xgmii_rst            (rst                ),
-    .i_xgmii_rxd            (r_xgmii_rxd        ),
-    .i_xgmii_rxc            (r_xgmii_rxc        ),
-    .o_xgmii_txd            (w_xgmii_txd        ),
-    .o_xgmii_txc            (w_xgmii_txc        ),
-    .m_axis_rdata           (m_axis_rdata       ),
-    .m_axis_ruser           (m_axis_ruser       ),
-    .m_axis_rkeep           (m_axis_rkeep       ),
-    .m_axis_rlast           (m_axis_rlast       ),
-    .m_axis_rvalid          (m_axis_rvalid      ),
-    .s_axis_tdata           (0),
-    .s_axis_tuser           (0),
-    .s_axis_tkeep           (0),
-    .s_axis_tlast           (0),
-    .s_axis_tvalid          (0),
-    .s_axis_tready          ()
+wire [63:0]     m_crc_axis_rdata    ;
+wire [79:0]     m_crc_axis_ruser    ;
+wire [7 :0]     m_crc_axis_rkeep    ;
+wire            m_crc_axis_rlast    ;
+wire            m_crc_axis_rvalid   ;
+
+reg             r_crc_error         ;
+reg             r_crc_valid         ;
+
+// TEN_GIG_MAC_module TEN_GIG_MAC_module_u0(
+//     .i_xgmii_clk            (clk                ),
+//     .i_xgmii_rst            (rst                ),
+//     .i_xgmii_rxd            (r_xgmii_rxd        ),
+//     .i_xgmii_rxc            (r_xgmii_rxc        ),
+//     .o_xgmii_txd            (w_xgmii_txd        ),
+//     .o_xgmii_txc            (w_xgmii_txc        ),
+//     .m_axis_rdata           (m_axis_rdata       ),
+//     .m_axis_ruser           (m_axis_ruser       ),
+//     .m_axis_rkeep           (m_axis_rkeep       ),
+//     .m_axis_rlast           (m_axis_rlast       ),
+//     .m_axis_rvalid          (m_axis_rvalid      ),
+//     .o_crc_error            (w_crc_error        ),
+//     .o_crc_valid            (w_crc_valid        ),
+//     .s_axis_tdata           (0),
+//     .s_axis_tuser           (0),
+//     .s_axis_tkeep           (0),
+//     .s_axis_tlast           (0),
+//     .s_axis_tvalid          (0),
+//     .s_axis_tready          ()
+// );
+
+TEN_GIG_MAC_RX TEN_GIG_MAC_RX_u0(
+    .i_clk              (clk ),
+    .i_rst              (rst ),
+    .i_xgmii_rxd        (r_xgmii_rxd        ),
+    .i_xgmii_rxc        (r_xgmii_rxc        ),
+    .m_axis_rdata       (m_axis_rdata   ),
+    .m_axis_ruser       (m_axis_ruser   ),
+    .m_axis_rkeep       (m_axis_rkeep   ),
+    .m_axis_rlast       (m_axis_rlast   ),
+    .m_axis_rvalid      (m_axis_rvalid  ),
+    .o_crc_error        (w_crc_error        ),
+    .o_crc_valid        (w_crc_valid        )
+);
+
+CRC_process CRC_process_u0(
+    .i_clk                  (clk                ),
+    .i_rst                  (rst                ),
+    .s_axis_rdata           (m_axis_rdata       ),
+    .s_axis_ruser           (m_axis_ruser       ),
+    .s_axis_rkeep           (m_axis_rkeep       ),
+    .s_axis_rlast           (m_axis_rlast       ),
+    .s_axis_rvalid          (m_axis_rvalid      ),
+    .i_crc_error            (r_crc_error        ),
+    .i_crc_valid            (r_crc_valid        ),
+    .m_axis_rdata           (m_crc_axis_rdata   ),
+    .m_axis_ruser           (m_crc_axis_ruser   ),
+    .m_axis_rkeep           (m_crc_axis_rkeep   ),
+    .m_axis_rlast           (m_crc_axis_rlast   ),
+    .m_axis_rvalid          (m_crc_axis_rvalid  ) 
 );
 
 initial begin
@@ -111,6 +155,16 @@ initial begin
     xgmii_rxd_send_sof4(8'b0100_0000);
     repeat(20) @(posedge clk);
     xgmii_rxd_send_sof4(8'b1000_0000);
+end
+
+initial begin
+    r_crc_error = 'd0;
+    r_crc_valid = 'd0;
+    wait(!rst);
+    repeat(20) @(posedge clk);
+    forever begin
+        crc_error();
+    end
 end
 
 task xgmii_rxd_send_sof7(input[7:0] eof_location);
@@ -173,6 +227,65 @@ begin : xgmii_txd_send4
     r_xgmii_rxd <= 'd0;
     r_xgmii_rxc <= 'd0;
     @(posedge clk);
+end
+endtask
+
+task crc_error();
+begin : crc_error
+    integer i;
+    r_crc_error <= 'd0;
+    r_crc_valid <= 'd0;
+//第一次crc正确
+    @(posedge clk);
+    wait(w_crc_valid);
+    r_crc_error <= 'd0;
+    r_crc_valid <= 'd1;
+    @(posedge clk);
+    r_crc_error <= 'd0;
+    r_crc_valid <= 'd0;
+//第二次crc错误
+    @(posedge clk);
+    wait(w_crc_valid);
+    r_crc_error <= 'd1;
+    r_crc_valid <= 'd1;
+    @(posedge clk);
+    r_crc_error <= 'd0;
+    r_crc_valid <= 'd0;
+//第三次crc正确
+    @(posedge clk);
+    wait(w_crc_valid);
+    r_crc_error <= 'd0;
+    r_crc_valid <= 'd1;
+    @(posedge clk);
+    r_crc_error <= 'd0;
+    r_crc_valid <= 'd0;
+//第四次crc错误
+    @(posedge clk);
+    wait(w_crc_valid);
+    r_crc_error <= 'd1;
+    r_crc_valid <= 'd1;
+    @(posedge clk);
+    r_crc_error <= 'd0;
+    r_crc_valid <= 'd0;
+
+//第五次crc错误
+    @(posedge clk);
+    wait(w_crc_valid);
+    r_crc_error <= 'd1;
+    r_crc_valid <= 'd1;
+    @(posedge clk);
+    r_crc_error <= 'd0;
+    r_crc_valid <= 'd0;
+
+//第六次crc正确
+    @(posedge clk);
+    wait(w_crc_valid);
+    r_crc_error <= 'd0;
+    r_crc_valid <= 'd1;
+    @(posedge clk);
+    r_crc_error <= 'd0;
+    r_crc_valid <= 'd0;
+    
 end
 endtask
 
