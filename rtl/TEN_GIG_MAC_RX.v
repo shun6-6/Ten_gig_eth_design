@@ -20,11 +20,19 @@
 //////////////////////////////////////////////////////////////////////////////////
 
 
-module TEN_GIG_MAC_RX(
+module TEN_GIG_MAC_RX#(
+    parameter       P_SRC_MAC  = 48'h00_00_00_00_00_00   ,
+    parameter       P_DST_MAC  = 48'h00_00_00_00_00_00   
+)(
     input           i_clk               ,
     input           i_rst               ,
     input  [63:0]   i_xgmii_rxd         ,
     input  [7 :0]   i_xgmii_rxc         ,
+
+    input  [47:0]   i_dynamic_src_mac   ,
+    input           i_dynamic_src_valid ,
+    input  [47:0]   i_dynamic_dst_mac   ,
+    input           i_dynamic_dst_valid ,
     
     output [63:0]   m_axis_rdata        ,
     output [79:0]   m_axis_ruser        ,//用户自定义{16'dlen,r_src_mac[47:0],16'dr_type}
@@ -45,6 +53,8 @@ localparam      P_FRAME_IDLE    = 8'h07 ,
 /******************************mechine******************************/
 
 /******************************reg**********************************/
+reg  [47:0]     ri_dynamic_src_mac      ;
+reg  [47:0]     ri_dynamic_dst_mac      ;
 reg  [63:0]     ri_xgmii_rxd        ;
 reg  [7 :0]     ri_xgmii_rxc        ;
 reg  [63:0]     ri_xgmii_rxd_1d     ;
@@ -60,6 +70,7 @@ reg  [7 :0]     rm_axis_rkeep_1d    ;
 reg             rm_axis_rlast       ;
 reg             rm_axis_rlast_1d    ;
 reg             rm_axis_rvalid      ;
+reg             rm_axis_rvalid_1d   ;
 reg  [15:0]     r_data_len          ;
 //解析接收数据
 reg  [15:0]     r_recv_cnt          ;
@@ -71,6 +82,7 @@ reg             r_data_run          ;//开始产生axis输出数据
 reg             r_data_run_1d       ;
 reg             r_data_run_2d       ;
 reg             r_data_run_3d       ;
+reg             r_mac_check         ;
 
 reg             r_sof               ;
 reg             r_eof               ;
@@ -92,6 +104,7 @@ reg             ro_crc_valid        ;
 reg  [31:0]     r_crc_recv          ;
 reg             ro_crc_error        ;
 reg             r_crc_check         ;
+reg             r_crc_out           ;
 /******************************wire*********************************/
 wire            w_sof               ;
 wire            w_eof               ;
@@ -106,6 +119,8 @@ wire [31:0]     w_crc_4             ;
 wire [31:0]     w_crc_5             ;
 wire [31:0]     w_crc_6             ;
 wire [31:0]     w_crc_7             ;
+
+wire [31:0]     w_crc_recv          ;
 /******************************component****************************/
 CRC32_64bKEEP CRC32_64bKEEP_u0(
   .i_clk        (i_clk              ),
@@ -133,10 +148,12 @@ assign m_axis_rdata  = rm_axis_rdata_1d ;
 assign m_axis_ruser  = rm_axis_ruser    ;
 assign m_axis_rkeep  = rm_axis_rkeep_1d ;
 assign m_axis_rlast  = rm_axis_rlast_1d ;
-assign m_axis_rvalid = rm_axis_rvalid   ;
+assign m_axis_rvalid = rm_axis_rvalid_1d;
 
 assign o_crc_valid   = ro_crc_valid     ;
 assign o_crc_error   = ro_crc_error     ;
+//发送和接收的crc都是小端模式
+assign w_crc_recv = {r_crc_recv[7:0],r_crc_recv[15:8],r_crc_recv[23:16],r_crc_recv[31:24]};
 //进入该模块的数据已经全部被转换为大端模式
 //开始字符以及位置判断
 assign w_sof =  ((ri_xgmii_rxd[63:56] == P_FRAME_START) && (ri_xgmii_rxc[7] == 1)) || 
@@ -162,6 +179,25 @@ assign w_eof_location = ((ri_xgmii_rxd[63:56] == P_FRAME_END) && (ri_xgmii_rxc[7
                         ((ri_xgmii_rxd[15: 8] == P_FRAME_END) && (ri_xgmii_rxc[1] == 1)) ? 1 :
                         ((ri_xgmii_rxd[7 : 0] == P_FRAME_END) && (ri_xgmii_rxc[0] == 1)) ? 0 : 0;
 /******************************always*******************************/
+//动态配置MAC
+always @(posedge i_clk or posedge i_rst)begin
+    if(i_rst)
+        ri_dynamic_src_mac <= P_SRC_MAC;
+    else if(i_dynamic_src_valid)
+        ri_dynamic_src_mac <= i_dynamic_src_mac;
+    else
+        ri_dynamic_src_mac <= ri_dynamic_src_mac;
+end
+
+always @(posedge i_clk or posedge i_rst)begin
+    if(i_rst)
+        ri_dynamic_dst_mac <= P_DST_MAC;
+    else if(i_dynamic_dst_valid)
+        ri_dynamic_dst_mac <= i_dynamic_dst_mac;
+    else
+        ri_dynamic_dst_mac <= ri_dynamic_dst_mac;
+end
+
 always @(posedge i_clk or posedge i_rst)begin
     if(i_rst)begin
         ri_xgmii_rxd    <= 'd0;
@@ -270,6 +306,19 @@ always @(posedge i_clk or posedge i_rst)begin
         r_type <= r_type;
 end
 
+//当目的MAC为广播报文或者是本地MAC时才接收数据
+always @(posedge i_clk or posedge i_rst)begin
+    if(i_rst)
+        r_mac_check <= 'd0;
+    else if(r_dst_mac == 48'hff_ff_ff_ff_ff_ff && r_recv_cnt == 2)
+        r_mac_check <= 'd1;
+    else if(r_dst_mac == ri_dynamic_src_mac && r_recv_cnt == 2)
+        r_mac_check <= 'd1;
+    else if(r_dst_mac == !ri_dynamic_src_mac && r_recv_cnt == 2)
+        r_mac_check <= 'd0;
+    else
+        r_mac_check <= r_mac_check;
+end
 
 //======================= CRC提取以及计算对比过程 =============================//
 
@@ -441,15 +490,28 @@ always @(posedge i_clk or posedge i_rst)begin
     if(i_rst)
         ro_crc_error <= 'd0;
     else if(r_crc_check)
-        ro_crc_error <= (r_crc_result == r_crc_recv) ? 'd0 : 'd1;
+        ro_crc_error <= (r_crc_result == w_crc_recv) ? 'd0 : 'd1;
     else
         ro_crc_error <= 'd0;
+end
+
+//只有当有有效数据输出时，才会判断crc
+always@(posedge i_clk,posedge i_rst)
+begin
+    if(i_rst)
+        r_crc_out <= 'd0;
+    else if(r_crc_check)
+        r_crc_out <= 'd0;
+    else if(rm_axis_rvalid)       
+        r_crc_out <= 'd1;
+    else    
+        r_crc_out <= r_crc_out;
 end
 
 always @(posedge i_clk or posedge i_rst)begin
     if(i_rst)
         ro_crc_valid <= 'd0;
-    else if(r_crc_check)
+    else if(r_crc_check && r_crc_out)
         ro_crc_valid <= 'd1;
     else
         ro_crc_valid <= 'd0;
@@ -532,11 +594,11 @@ end
 always @(posedge i_clk or posedge i_rst)begin
     if(i_rst)
         rm_axis_rlast <= 'd0;
-    else if(r_sof_location == 7 && w_eof && w_eof_location >= 4)
+    else if(r_sof_location == 7 && w_eof && w_eof_location >= 4 && rm_axis_rvalid)
         rm_axis_rlast <= 'd1;
-    else if(r_sof_location == 7 && r_eof && r_eof_location < 4)
+    else if(r_sof_location == 7 && r_eof && r_eof_location < 4 && rm_axis_rvalid)
         rm_axis_rlast <= 'd1;
-    else if(r_sof_location == 3 && r_eof)
+    else if(r_sof_location == 3 && r_eof && rm_axis_rvalid)
         rm_axis_rlast <= 'd1;
     else
         rm_axis_rlast <= 'd0;
@@ -552,12 +614,19 @@ end
 always @(posedge i_clk or posedge i_rst)begin
     if(i_rst)
         rm_axis_rvalid <= 'd0;
-    else if(rm_axis_rlast_1d)
+    else if(rm_axis_rlast)
         rm_axis_rvalid <= 'd0; 
-    else if(r_data_run_2d && !r_data_run_3d)
+    else if(r_data_run_1d && !r_data_run_2d && r_mac_check && r_comma)
         rm_axis_rvalid <= 'd1; 
     else
         rm_axis_rvalid <= rm_axis_rvalid;
+end
+
+always @(posedge i_clk or posedge i_rst)begin
+    if(i_rst)
+        rm_axis_rvalid_1d <= 'd0;
+    else
+        rm_axis_rvalid_1d <= rm_axis_rvalid; 
 end
 
 always @(posedge i_clk or posedge i_rst)begin

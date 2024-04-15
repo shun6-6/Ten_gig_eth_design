@@ -65,6 +65,12 @@ wire            m_crc_axis_rvalid   ;
 reg             r_crc_error         ;
 reg             r_crc_valid         ;
 
+reg  [63:0]     rs_axis_tdata       ;
+reg  [79:0]     rs_axis_tuser       ;
+reg  [7 :0]     rs_axis_tkeep       ;
+reg             rs_axis_tlast       ;
+reg             rs_axis_tvalid      ;
+
 // TEN_GIG_MAC_module TEN_GIG_MAC_module_u0(
 //     .i_xgmii_clk            (clk                ),
 //     .i_xgmii_rst            (rst                ),
@@ -87,9 +93,33 @@ reg             r_crc_valid         ;
 //     .s_axis_tready          ()
 // );
 
+TEN_GIG_MAC_TX#(
+    .P_SRC_MAC              (48'h01_02_03_04_05_06),
+    .P_DST_MAC              (48'h01_02_03_04_05_06)
+)TEN_GIG_MAC_TX_u0(
+    .i_clk                  (clk        ),
+    .i_rst                  (rst        ),
+    .i_dynamic_src_mac      (0),
+    .i_dynamic_src_valid    (0),
+    .i_dynamic_dst_mac      (0),
+    .i_dynamic_dst_valid    (0),
+    .s_axis_tdata           (rs_axis_tdata       ),
+    .s_axis_tuser           (rs_axis_tuser       ),
+    .s_axis_tkeep           (rs_axis_tkeep       ),
+    .s_axis_tlast           (rs_axis_tlast       ),
+    .s_axis_tvalid          (rs_axis_tvalid      ),
+    .s_axis_tready          (),
+    .o_xgmii_txd            (),
+    .o_xgmii_txc            () 
+);
+
 TEN_GIG_MAC_RX TEN_GIG_MAC_RX_u0(
     .i_clk              (clk ),
     .i_rst              (rst ),
+    .i_dynamic_src_mac      (0),
+    .i_dynamic_src_valid    (0),
+    .i_dynamic_dst_mac      (0),
+    .i_dynamic_dst_valid    (0),
     .i_xgmii_rxd        (r_xgmii_rxd        ),
     .i_xgmii_rxc        (r_xgmii_rxc        ),
     .m_axis_rdata       (m_axis_rdata   ),
@@ -286,6 +316,68 @@ begin : crc_error
     r_crc_error <= 'd0;
     r_crc_valid <= 'd0;
     
+end
+endtask
+
+reg [7:0] cnt;
+
+initial begin
+    cnt             = 'd0;
+    rs_axis_tdata   = 'd0;
+    rs_axis_tuser   = 'd0;
+    rs_axis_tkeep   = 'd0;
+    rs_axis_tlast   = 'd0;
+    rs_axis_tvalid  = 'd0; 
+    wait(!rst);
+    repeat(10)@(posedge clk);
+    mac_tx(8'b1111_1111);
+    repeat(1)@(posedge clk);
+    mac_tx(8'b1111_1110);
+    repeat(1)@(posedge clk);
+    mac_tx(8'b1111_1100);
+    repeat(1)@(posedge clk);
+    mac_tx(8'b1111_1000);
+    repeat(10)@(posedge clk);
+    mac_tx(8'b1111_0000);
+    repeat(10)@(posedge clk);
+    mac_tx(8'b1110_0000);
+    repeat(10)@(posedge clk);
+    mac_tx(8'b1100_0000);
+    repeat(10)@(posedge clk);
+    mac_tx(8'b1000_0000);
+end
+
+
+task mac_tx(input [7 :0]keep);
+begin : mac_tx
+    integer i;
+    cnt <= 'd0;
+    rs_axis_tdata  <= 'd0;
+    rs_axis_tuser  <= 'd0;
+    rs_axis_tkeep  <= 'd0;
+    rs_axis_tlast  <= 'd0;
+    rs_axis_tvalid <= 'd0; 
+    @(posedge clk);
+    for(i = 0; i < 10; i = i + 1)begin
+        
+        rs_axis_tdata  <= {8{cnt}};
+        rs_axis_tuser  <= {16'd10,48'd0,16'h0800};
+        rs_axis_tvalid <= 'd1;  
+        if(i == 9)begin
+            rs_axis_tkeep  <= keep;
+            rs_axis_tlast  <= 'd1;   
+        end else begin
+            rs_axis_tkeep  <= 8'hff;
+            rs_axis_tlast  <= 'd0;               
+        end
+        cnt <= i + 1;
+        @(posedge clk);
+    end
+    rs_axis_tdata  <= 'd0;
+    rs_axis_tuser  <= 'd0;
+    rs_axis_tkeep  <= 'd0;
+    rs_axis_tlast  <= 'd0;
+    rs_axis_tvalid <= 'd0; 
 end
 endtask
 

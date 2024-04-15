@@ -71,36 +71,57 @@ assign o_xgmii_txd = {w_xgmii_txd[7 :0],w_xgmii_txd[15:8],w_xgmii_txd[23:16],w_x
 assign o_xgmii_txc = {w_xgmii_txc[0],w_xgmii_txc[1],w_xgmii_txc[2],w_xgmii_txc[3],
                             w_xgmii_txc[4],w_xgmii_txc[5],w_xgmii_txc[6],w_xgmii_txc[7]};
 
+TEN_GIG_MAC_TX#(
+    .P_SRC_MAC              (48'h00_00_00_00_00_00),
+    .P_DST_MAC              (48'h00_00_00_00_00_00)
+)TEN_GIG_MAC_TX_u0(
+    .i_clk                  (i_xgmii_clk        ),
+    .i_rst                  (i_xgmii_rst        ),
+    .i_dynamic_src_mac      (0),
+    .i_dynamic_src_valid    (0),
+    .i_dynamic_dst_mac      (0),
+    .i_dynamic_dst_valid    (0),
+    .s_axis_tdata           (s_axis_tdata       ),
+    .s_axis_tuser           (s_axis_tuser       ),
+    .s_axis_tkeep           (s_axis_tkeep       ),
+    .s_axis_tlast           (s_axis_tlast       ),
+    .s_axis_tvalid          (s_axis_tvalid      ),
+    .s_axis_tready          (),
+    .o_xgmii_txd            (),
+    .o_xgmii_txc            () 
+);
+
+
 CRC_process CRC_process_u0(
-    .i_clk              (i_xgmii_clk        ),
-    .i_rst              (i_xgmii_rst        ),
-    .s_axis_rdata       (m2crc_axis_rdata   ),
-    .s_axis_ruser       (m2crc_axis_ruser   ),
-    .s_axis_rkeep       (m2crc_axis_rkeep   ),
-    .s_axis_rlast       (m2crc_axis_rlast   ),
-    .s_axis_rvalid      (m2crc_axis_rvalid  ),
-    .i_crc_error        (w_crc_error        ),
-    .i_crc_valid        (w_crc_valid        ),
-    .m_axis_rdata       (m_axis_rdata       ),
-    .m_axis_ruser       (m_axis_ruser       ),
-    .m_axis_rkeep       (m_axis_rkeep       ),
-    .m_axis_rlast       (m_axis_rlast       ),
-    .m_axis_rvalid      (m_axis_rvalid      ) 
+    .i_clk                  (i_xgmii_clk        ),
+    .i_rst                  (i_xgmii_rst        ),
+    .s_axis_rdata           (m2crc_axis_rdata   ),
+    .s_axis_ruser           (m2crc_axis_ruser   ),
+    .s_axis_rkeep           (m2crc_axis_rkeep   ),
+    .s_axis_rlast           (m2crc_axis_rlast   ),
+    .s_axis_rvalid          (m2crc_axis_rvalid  ),
+    .i_crc_error            (w_crc_error        ),
+    .i_crc_valid            (w_crc_valid        ),
+    .m_axis_rdata           (m_axis_rdata       ),
+    .m_axis_ruser           (m_axis_ruser       ),
+    .m_axis_rkeep           (m_axis_rkeep       ),
+    .m_axis_rlast           (m_axis_rlast       ),
+    .m_axis_rvalid          (m_axis_rvalid      ) 
 );
 
 
 TEN_GIG_MAC_RX TEN_GIG_MAC_RX_u0(
-    .i_clk              (i_xgmii_clk        ),
-    .i_rst              (i_xgmii_rst        ),
-    .i_xgmii_rxd        (i_xgmii_rxd        ),
-    .i_xgmii_rxc        (i_xgmii_rxc        ),
-    .m_axis_rdata       (m2crc_axis_rdata   ),
-    .m_axis_ruser       (m2crc_axis_ruser   ),
-    .m_axis_rkeep       (m2crc_axis_rkeep   ),
-    .m_axis_rlast       (m2crc_axis_rlast   ),
-    .m_axis_rvalid      (m2crc_axis_rvalid  ),
-    .o_crc_error        (w_crc_error        ),
-    .o_crc_valid        (w_crc_valid        )
+    .i_clk                  (i_xgmii_clk        ),
+    .i_rst                  (i_xgmii_rst        ),
+    .i_xgmii_rxd            (i_xgmii_rxd        ),
+    .i_xgmii_rxc            (i_xgmii_rxc        ),
+    .m_axis_rdata           (m2crc_axis_rdata   ),
+    .m_axis_ruser           (m2crc_axis_ruser   ),
+    .m_axis_rkeep           (m2crc_axis_rkeep   ),
+    .m_axis_rlast           (m2crc_axis_rlast   ),
+    .m_axis_rvalid          (m2crc_axis_rvalid  ),
+    .o_crc_error            (w_crc_error        ),
+    .o_crc_valid            (w_crc_valid        )
 );
 
 
