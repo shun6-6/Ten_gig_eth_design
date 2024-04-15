@@ -61,7 +61,28 @@ wire                reset_counter_done      ;
 wire [7 :0]         core_status             ;
 wire [447:0]        status_vector           ;
 wire [535:0]        configuration_vector    ;
+wire                drp_gnt                 ;
 wire                drp_req                 ;
+wire                drp_den_o               ;
+wire                drp_dwe_o               ;
+wire [15 : 0]       drp_daddr_o             ;
+wire [15 : 0]       drp_di_o                ;
+wire                drp_drdy_o              ;
+wire [15 : 0]       drp_drpdo_o             ;
+wire                drp_den_i               ;
+wire                drp_dwe_i               ;
+wire [15 : 0]       drp_daddr_i             ;
+wire [15 : 0]       drp_di_i                ;
+wire                drp_drdy_i              ;
+wire [15 : 0]       drp_drpdo_i             ;
+
+assign drp_gnt = drp_req;
+assign drp_den_i = drp_den_o;
+assign drp_dwe_i = drp_dwe_o;
+assign drp_daddr_i = drp_daddr_o;
+assign drp_di_i = drp_di_o;
+assign drp_drdy_i = drp_drdy_o;
+assign drp_drpdo_i = drp_drpdo_o;
 
 assign o_xgmii_clk      = coreclk;
 assign o_block_sync     = core_status[0];
@@ -70,7 +91,7 @@ assign o_pma_link       = status_vector[18];
 assign o_pcs_rx_link    = status_vector[226];
 assign configuration_vector[399:384] = 16'h4C4B;
 assign configuration_vector[535:400] = 136'd0;
-assign configuration_vector[383:1]   = 384'd0;
+assign configuration_vector[383:1]   = 383'd0;
 assign configuration_vector[0:0]     = 0;//PMA LOOPBACK
 
 ten_gig_eth_pcs_pma_0_shared_clock_and_reset ten_gig_eth_pcs_pma_shared_clock_reset_block
@@ -123,19 +144,19 @@ ten_gig_eth_pcs_pma_0 ten_gig_eth_pcs_pma_u0 (
     .signal_detect          (1                      ),  // input wire signal_detect
     .tx_fault               (0                      ),  // input wire tx_fault
     .drp_req                (drp_req                ),  // output wire drp_req
-    .drp_gnt                (drp_req                ),  // input wire drp_gnt
-    .drp_den_o              (                       ),  // output wire drp_den_o
-    .drp_dwe_o              (                       ),  // output wire drp_dwe_o
-    .drp_daddr_o            (                       ),  // output wire [15 : 0] drp_daddr_o
-    .drp_di_o               (                       ),  // output wire [15 : 0] drp_di_o
-    .drp_drdy_o             (                       ),  // output wire drp_drdy_o
-    .drp_drpdo_o            (                       ),  // output wire [15 : 0] drp_drpdo_o
-    .drp_den_i              (0                      ),  // input wire drp_den_i
-    .drp_dwe_i              (0                      ),  // input wire drp_dwe_i
-    .drp_daddr_i            (0                      ),  // input wire [15 : 0] drp_daddr_i
-    .drp_di_i               (0                      ),  // input wire [15 : 0] drp_di_i
-    .drp_drdy_i             (0                      ),  // input wire drp_drdy_i
-    .drp_drpdo_i            (0                      ),  // input wire [15 : 0] drp_drpdo_i
+    .drp_gnt                (drp_gnt                ),  // input wire drp_gnt
+    .drp_den_o              (drp_den_o              ),  // output wire drp_den_o
+    .drp_dwe_o              (drp_dwe_o              ),  // output wire drp_dwe_o
+    .drp_daddr_o            (drp_daddr_o            ),  // output wire [15 : 0] drp_daddr_o
+    .drp_di_o               (drp_di_o               ),  // output wire [15 : 0] drp_di_o
+    .drp_drdy_o             (drp_drdy_o             ),  // output wire drp_drdy_o
+    .drp_drpdo_o            (drp_drpdo_o            ),  // output wire [15 : 0] drp_drpdo_o
+    .drp_den_i              (drp_den_i              ),  // input wire drp_den_i
+    .drp_dwe_i              (drp_dwe_i              ),  // input wire drp_dwe_i
+    .drp_daddr_i            (drp_daddr_i            ),  // input wire [15 : 0] drp_daddr_i
+    .drp_di_i               (drp_di_i               ),  // input wire [15 : 0] drp_di_i
+    .drp_drdy_i             (drp_drdy_i             ),  // input wire drp_drdy_i
+    .drp_drpdo_i            (drp_drpdo_i            ),  // input wire [15 : 0] drp_drpdo_i
     .tx_disable             (o_tx_disable           ),  // output wire tx_disable
     .pma_pmd_type           (3'b101                 )   // input wire [2 : 0] pma_pmd_type
 );

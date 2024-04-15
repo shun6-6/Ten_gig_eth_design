@@ -49,6 +49,7 @@ localparam      P_FRAME_IDLE    = 8'h07 ,
                 P_FRAME_START   = 8'hFB ,
                 P_FRAME_END     = 8'hFD ,
                 P_FRAME_EEROR   = 8'hFE ;
+localparam      P_READY_CNT     = 5'd16 ;
 /******************************mechine******************************/
 
 /******************************reg**********************************/
@@ -59,6 +60,7 @@ reg  [79:0]     rs_axis_tuser           ;
 reg  [7 :0]     rs_axis_tkeep           ;
 reg             rs_axis_tlast           ;
 reg             rs_axis_tvalid          ;
+reg             rs_axis_tready          ;
 reg  [63:0]     ro_xgmii_txd            ;
 reg  [7 :0]     ro_xgmii_txc            ;
 
@@ -96,6 +98,11 @@ reg  [63:0]     r_xgmii_txd_2d          ;
 reg  [7 :0]     r_xgmii_txc             ;
 reg  [7 :0]     r_xgmii_txc_1d          ;
 reg  [7 :0]     r_xgmii_txc_2d          ;
+
+reg             r_send_data             ;
+
+//流控
+reg  [4 :0]     r_ready_cnt             ;
 /******************************wire*********************************/
 wire [63:0]     w_fifo_data_dout        ;
 wire            w_fifo_data_full        ;
@@ -182,19 +189,20 @@ CRC32_64bKEEP CRC32_64bKEEP_u0(
   .o_crc_7      (w_crc_7_big        ) 
 );
 /******************************assign*******************************/
+assign s_axis_tready = rs_axis_tready;
 assign o_xgmii_txd = ro_xgmii_txd;
 assign o_xgmii_txc = ro_xgmii_txc;
 assign w_sof = r_run && !r_run_1d;
 assign w_eof = r_pkt_cnt > 2 && r_pkt_cnt == r_data_len + 1;
 //crc小端模式发送
-assign w_crc_8  = {w_crc_8_big[7:0],w_crc_8[15:8],w_crc_8[23:16],w_crc_8[31:24]};
-assign w_crc_1  = {w_crc_1_big[7:0],w_crc_1[15:8],w_crc_1[23:16],w_crc_1[31:24]};
-assign w_crc_2  = {w_crc_2_big[7:0],w_crc_2[15:8],w_crc_2[23:16],w_crc_2[31:24]};
-assign w_crc_3  = {w_crc_3_big[7:0],w_crc_3[15:8],w_crc_3[23:16],w_crc_3[31:24]};
-assign w_crc_4  = {w_crc_4_big[7:0],w_crc_4[15:8],w_crc_4[23:16],w_crc_4[31:24]};
-assign w_crc_5  = {w_crc_5_big[7:0],w_crc_5[15:8],w_crc_5[23:16],w_crc_5[31:24]};
-assign w_crc_6  = {w_crc_6_big[7:0],w_crc_6[15:8],w_crc_6[23:16],w_crc_6[31:24]};
-assign w_crc_7  = {w_crc_7_big[7:0],w_crc_7[15:8],w_crc_7[23:16],w_crc_7[31:24]};
+assign w_crc_8  = {w_crc_8_big[7:0],w_crc_8_big[15:8],w_crc_8_big[23:16],w_crc_8_big[31:24]};
+assign w_crc_1  = {w_crc_1_big[7:0],w_crc_1_big[15:8],w_crc_1_big[23:16],w_crc_1_big[31:24]};
+assign w_crc_2  = {w_crc_2_big[7:0],w_crc_2_big[15:8],w_crc_2_big[23:16],w_crc_2_big[31:24]};
+assign w_crc_3  = {w_crc_3_big[7:0],w_crc_3_big[15:8],w_crc_3_big[23:16],w_crc_3_big[31:24]};
+assign w_crc_4  = {w_crc_4_big[7:0],w_crc_4_big[15:8],w_crc_4_big[23:16],w_crc_4_big[31:24]};
+assign w_crc_5  = {w_crc_5_big[7:0],w_crc_5_big[15:8],w_crc_5_big[23:16],w_crc_5_big[31:24]};
+assign w_crc_6  = {w_crc_6_big[7:0],w_crc_6_big[15:8],w_crc_6_big[23:16],w_crc_6_big[31:24]};
+assign w_crc_7  = {w_crc_7_big[7:0],w_crc_7_big[15:8],w_crc_7_big[23:16],w_crc_7_big[31:24]};
 /******************************always*******************************/
 //动态配置MAC
 always @(posedge i_clk or posedge i_rst)begin
@@ -341,7 +349,7 @@ end
 
 always @(posedge i_clk or posedge i_rst)begin
     if(i_rst)
-        r_xgmii_txd <= 'd0;
+        r_xgmii_txd <= {8{P_FRAME_IDLE}};
     else if(r_fifo_len_type_rden | ((r_pkt_cnt <= r_data_len + 2) && (r_pkt_cnt > 0)))
         case (r_pkt_cnt)
             0       : r_xgmii_txd <= 64'hfb55_5555_5555_5555;
@@ -355,7 +363,7 @@ end
 
 always @(posedge i_clk or posedge i_rst)begin
     if(i_rst)begin
-        r_xgmii_txd <= 'd0;
+        r_xgmii_txd_1d <= 'd0;
         r_xgmii_txd_2d <= 'd0;
     end
     else begin
@@ -367,7 +375,7 @@ end
 //r_xgmii_txc还需要考虑最后多加4byte的CRC
 always @(posedge i_clk or posedge i_rst)begin
     if(i_rst)
-        r_xgmii_txc <= 8'b0000_0000;
+        r_xgmii_txc <= 8'b1111_1111;
     else if(r_fifo_len_type_rden)
         r_xgmii_txc <= 8'b1000_0000;
     else if(r_pkt_cnt == r_data_len + 3 && r_tail_keep >= 8'b1111_1000)
@@ -386,14 +394,28 @@ always @(posedge i_clk or posedge i_rst)begin
             8'b1000_0000    : r_xgmii_txc <= 8'b0000_1111;
             default         : r_xgmii_txc <= 8'b0000_0000;
         endcase
-    else
+    else if(r_send_data)
         r_xgmii_txc <= 8'b0000_0000;
+    else
+        r_xgmii_txc <= 8'b1111_1111;
 end
-
 
 always @(posedge i_clk or posedge i_rst)begin
     if(i_rst)
-        ro_xgmii_txd <= 'd0;
+        r_send_data <= 'd0;
+    else if(r_pkt_cnt == r_data_len + 3 && r_tail_keep >= 8'b1111_1000)
+        r_send_data <= 'd0;
+    else if(r_pkt_cnt == r_data_len + 2 && r_tail_keep < 8'b1111_1000)
+        r_send_data <= 'd0;
+    else if(r_fifo_len_type_rden)
+        r_send_data <= 'd1;
+    else
+        r_send_data <= r_send_data;
+end
+
+always @(posedge i_clk or posedge i_rst)begin
+    if(i_rst)
+        ro_xgmii_txd <= {8{P_FRAME_IDLE}};
     else if(r_pkt_cnt_3d == r_data_len + 2)
         case (r_tail_keep_1d)
             8'b1111_1111    : ro_xgmii_txd <= {r_xgmii_txd_2d[55: 0],r_crc_result[31:24]};
@@ -420,9 +442,9 @@ end
 
 always @(posedge i_clk or posedge i_rst)begin
     if(i_rst)begin
-        ro_xgmii_txc <= 'd0;
-        r_xgmii_txc_1d <= 'd0;
-        r_xgmii_txc_2d <= 'd0;
+        ro_xgmii_txc    <= 8'b1111_1111;
+        r_xgmii_txc_1d  <= 8'b1111_1111;
+        r_xgmii_txc_2d  <= 8'b1111_1111;
     end
     else begin
         r_xgmii_txc_1d <= r_xgmii_txc;
@@ -526,14 +548,29 @@ always @(posedge i_clk or posedge i_rst)begin
         r_crc_result <= r_crc_result;
 end
 
-// always @(posedge i_clk or posedge i_rst)begin
-//     if(i_rst)
-        
-//     else if()
-        
-//     else
-        
-// end
+
+//流控，以太网帧间隔96byte，即12周期（这是针对XGMII接口数据，用户AXIS这边需要16）
+always @(posedge i_clk or posedge i_rst)begin
+    if(i_rst)
+        rs_axis_tready <= 'd1;
+    else if(s_axis_tlast)
+        rs_axis_tready <= 'd0;
+    else if(r_ready_cnt == P_READY_CNT - 2)
+        rs_axis_tready <= 'd1;
+    else
+        rs_axis_tready <= rs_axis_tready;
+end
+
+always @(posedge i_clk or posedge i_rst)begin
+    if(i_rst)
+        r_ready_cnt <= 'd0;
+    else if(r_ready_cnt == P_READY_CNT - 2)
+        r_ready_cnt <= 'd0;
+    else if(rs_axis_tlast | r_ready_cnt)
+        r_ready_cnt <= r_ready_cnt + 'd1;
+    else
+        r_ready_cnt <= r_ready_cnt;
+end
 
 
 

@@ -71,13 +71,22 @@ reg  [7 :0]     rs_axis_tkeep       ;
 reg             rs_axis_tlast       ;
 reg             rs_axis_tvalid      ;
 
-// TEN_GIG_MAC_module TEN_GIG_MAC_module_u0(
-//     .i_xgmii_clk            (clk                ),
-//     .i_xgmii_rst            (rst                ),
+// TEN_GIG_MAC_module #(
+//     .P_SRC_MAC              (48'h01_02_03_04_05_06),
+//     .P_DST_MAC              (48'h01_02_03_04_05_06)
+// )TEN_GIG_MAC_module_u0(
+//     .i_xgmii_clk            (clk        ),
+//     .i_xgmii_rst            (rst        ),
 //     .i_xgmii_rxd            (r_xgmii_rxd        ),
 //     .i_xgmii_rxc            (r_xgmii_rxc        ),
 //     .o_xgmii_txd            (w_xgmii_txd        ),
 //     .o_xgmii_txc            (w_xgmii_txc        ),
+    
+//     .i_dynamic_src_mac      (0),
+//     .i_dynamic_src_valid    (0),
+//     .i_dynamic_dst_mac      (0),
+//     .i_dynamic_dst_valid    (0),
+
 //     .m_axis_rdata           (m_axis_rdata       ),
 //     .m_axis_ruser           (m_axis_ruser       ),
 //     .m_axis_rkeep           (m_axis_rkeep       ),
@@ -85,13 +94,14 @@ reg             rs_axis_tvalid      ;
 //     .m_axis_rvalid          (m_axis_rvalid      ),
 //     .o_crc_error            (w_crc_error        ),
 //     .o_crc_valid            (w_crc_valid        ),
-//     .s_axis_tdata           (0),
-//     .s_axis_tuser           (0),
-//     .s_axis_tkeep           (0),
-//     .s_axis_tlast           (0),
-//     .s_axis_tvalid          (0),
+//     .s_axis_tdata           (s_axis_tdata       ),
+//     .s_axis_tuser           (s_axis_tuser       ),
+//     .s_axis_tkeep           (s_axis_tkeep       ),
+//     .s_axis_tlast           (s_axis_tlast       ),
+//     .s_axis_tvalid          (s_axis_tvalid      ),
 //     .s_axis_tready          ()
 // );
+
 
 TEN_GIG_MAC_TX#(
     .P_SRC_MAC              (48'h01_02_03_04_05_06),
@@ -331,19 +341,19 @@ initial begin
     wait(!rst);
     repeat(10)@(posedge clk);
     mac_tx(8'b1111_1111);
-    repeat(1)@(posedge clk);
+    repeat(15)@(posedge clk);
     mac_tx(8'b1111_1110);
-    repeat(1)@(posedge clk);
+    repeat(15)@(posedge clk);
     mac_tx(8'b1111_1100);
-    repeat(1)@(posedge clk);
+    repeat(15)@(posedge clk);
     mac_tx(8'b1111_1000);
-    repeat(10)@(posedge clk);
+    repeat(15)@(posedge clk);
     mac_tx(8'b1111_0000);
-    repeat(10)@(posedge clk);
+    repeat(15)@(posedge clk);
     mac_tx(8'b1110_0000);
-    repeat(10)@(posedge clk);
+    repeat(15)@(posedge clk);
     mac_tx(8'b1100_0000);
-    repeat(10)@(posedge clk);
+    repeat(15)@(posedge clk);
     mac_tx(8'b1000_0000);
 end
 
