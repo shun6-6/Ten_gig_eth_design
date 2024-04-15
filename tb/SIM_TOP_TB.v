@@ -37,12 +37,18 @@ always begin
     gtclk = 1;
     #3.2;
 end
+
+reg i_sim_speedup_control;
 wire o_gt_txp;
 wire o_gt_txn;
 wire o_tx_disable;
 
 
-XC7Z100_Top XC7Z100_Top_u0(
+
+XC7Z100_Top#(    
+    .P_SRC_MAC              (48'h01_02_03_04_05_06),
+    .P_DST_MAC              (48'h01_02_03_04_05_06))
+XC7Z100_Top_u0(
     .i_sys_clk_p     (clk),
     .i_sys_clk_n     (~clk),
     .i_gt_refclk_p   (gtclk),
