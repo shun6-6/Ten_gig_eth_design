@@ -49,7 +49,7 @@ localparam      P_FRAME_IDLE    = 8'h07 ,
                 P_FRAME_START   = 8'hFB ,
                 P_FRAME_END     = 8'hFD ,
                 P_FRAME_EEROR   = 8'hFE ;
-localparam      P_READY_CNT     = 5'd16 ;
+localparam      P_READY_CNT     = 5'd6 ;
 /******************************mechine******************************/
 
 /******************************reg**********************************/
@@ -418,13 +418,13 @@ always @(posedge i_clk or posedge i_rst)begin
         ro_xgmii_txd <= {8{P_FRAME_IDLE}};
     else if(r_pkt_cnt_3d == r_data_len + 2)
         case (r_tail_keep_1d)
-            8'b1111_1111    : ro_xgmii_txd <= {r_xgmii_txd_2d[55: 0],r_crc_result[31:24]};
-            8'b1111_1110    : ro_xgmii_txd <= {r_xgmii_txd_2d[55: 8],r_crc_result[31:16]};
-            8'b1111_1100    : ro_xgmii_txd <= {r_xgmii_txd_2d[55:16],r_crc_result[31: 8]};
-            8'b1111_1000    : ro_xgmii_txd <= {r_xgmii_txd_2d[55:24],r_crc_result[31: 0]};
-            8'b1111_0000    : ro_xgmii_txd <= {r_xgmii_txd_2d[55:32],r_crc_result[31: 0],P_FRAME_END};
-            8'b1110_0000    : ro_xgmii_txd <= {r_xgmii_txd_2d[55:40],r_crc_result[31: 0],P_FRAME_END,P_FRAME_IDLE};
-            8'b1100_0000    : ro_xgmii_txd <= {r_xgmii_txd_2d[55:48],r_crc_result[31: 0],P_FRAME_END,P_FRAME_IDLE,P_FRAME_IDLE};
+            8'b1111_1111    : ro_xgmii_txd <= {r_xgmii_txd_2d[63: 8],r_crc_result[31:24]};
+            8'b1111_1110    : ro_xgmii_txd <= {r_xgmii_txd_2d[63:16],r_crc_result[31:16]};
+            8'b1111_1100    : ro_xgmii_txd <= {r_xgmii_txd_2d[63:24],r_crc_result[31: 8]};
+            8'b1111_1000    : ro_xgmii_txd <= {r_xgmii_txd_2d[63:32],r_crc_result[31: 0]};
+            8'b1111_0000    : ro_xgmii_txd <= {r_xgmii_txd_2d[63:40],r_crc_result[31: 0],P_FRAME_END};
+            8'b1110_0000    : ro_xgmii_txd <= {r_xgmii_txd_2d[63:48],r_crc_result[31: 0],P_FRAME_END,P_FRAME_IDLE};
+            8'b1100_0000    : ro_xgmii_txd <= {r_xgmii_txd_2d[63:56],r_crc_result[31: 0],P_FRAME_END,P_FRAME_IDLE,P_FRAME_IDLE};
             8'b1000_0000    : ro_xgmii_txd <= {r_crc_result[31: 0],P_FRAME_END,P_FRAME_IDLE,P_FRAME_IDLE,P_FRAME_IDLE};
             default         : ro_xgmii_txd <= {8{P_FRAME_IDLE}};
         endcase 
