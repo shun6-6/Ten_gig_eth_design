@@ -21,8 +21,9 @@
 
 
 module XC7Z100_Top#(
-    parameter       P_SRC_MAC = 48'h00_00_00_00_00_00,
-    parameter       P_DST_MAC = 48'h00_00_00_00_00_00
+    parameter       P_SRC_MAC = 48'h01_02_03_04_05_06,
+    //parameter       P_DST_MAC = 48'h3c_fd_fe_d2_37_0a
+    parameter       P_DST_MAC = 48'hff_ff_ff_ff_ff_ff
 )(
     input           i_sys_clk_p     ,
     input           i_sys_clk_n     ,
@@ -49,8 +50,8 @@ wire            w_qpllreset     ;
 
 wire            w_xgmii_clk     ;
 wire            w_xgmii_rst     ;
-wire [63 : 0]   w_xgmii_txd     ;
-wire [7  : 0]   w_xgmii_txc     ;
+(* MARK_DEBUG = "TRUE" *)wire [63 : 0]   w_xgmii_txd     ;
+(* MARK_DEBUG = "TRUE" *)wire [7  : 0]   w_xgmii_txc     ;
 (* MARK_DEBUG = "TRUE" *)wire [63 : 0]   w_xgmii_rxd     ;
 (* MARK_DEBUG = "TRUE" *)wire [7  : 0]   w_xgmii_rxc     ;
 
@@ -66,6 +67,7 @@ wire            w_pcs_rx_link   ;
 (* MARK_DEBUG = "TRUE" *)wire            m_axis_rvalid       ;
 (* MARK_DEBUG = "TRUE" *)wire            w_crc_error         ;
 (* MARK_DEBUG = "TRUE" *)wire            w_crc_valid         ;
+
 wire [63:0]     s_axis_tdata        ;
 wire [79:0]     s_axis_tuser        ;
 wire [7 :0]     s_axis_tkeep        ;
@@ -174,7 +176,7 @@ TEN_GIG_MAC_module #(
 TEN_GIG_ETH_PCSPMA TEN_GIG_ETH_PCSPMA_u0(
     .i_gt_refclk            (w_gt_refclk        ),
     .i_sys_clk              (w_sys_clk          ),
-    .i_rst                  (w_sys_rst),
+    .i_rst                  (0),
     .i_qplllock             (w_qplllock         ),
     .i_qplloutclk           (w_qplloutclk       ),
     .i_qplloutrefclk        (w_qplloutrefclk    ),

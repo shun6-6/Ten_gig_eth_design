@@ -370,7 +370,7 @@ begin : mac_tx
     @(posedge clk);
     for(i = 0; i < 10; i = i + 1)begin
         
-        rs_axis_tdata  <= {8{cnt}};
+        rs_axis_tdata  <= {8'h11,8'h22,8'h33,8'h44,8'h55,8'h66,8'h77,8'h88};
         rs_axis_tuser  <= {16'd10,48'd0,16'h0800};
         rs_axis_tvalid <= 'd1;  
         if(i == 9)begin

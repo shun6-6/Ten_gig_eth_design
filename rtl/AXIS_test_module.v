@@ -32,7 +32,7 @@ module AXIS_test_module(
     input           s_axis_tready       
 );
 
-localparam      P_SEND_LEN = 16'd10;
+localparam      P_SEND_LEN = 16'd186;
 
 reg  [63:0]     rm_axis_tdata     ;
 reg  [79:0]     rm_axis_tuser     ;
@@ -40,9 +40,9 @@ reg  [7 :0]     rm_axis_tkeep     ;
 reg             rm_axis_tlast     ;
 reg             rm_axis_tvalid    ;
 
-reg  [5:0]     r_init_cnt      ;
-reg  [7 :0]     r_send_cnt      ;
-reg  [7 :0]     r_pkt_cnt      ;
+reg  [5:0]      r_init_cnt      ;
+reg  [15:0]     r_send_cnt      ;
+reg  [7 :0]     r_pkt_cnt       ;
 
 wire w_axis_active  ;
 
@@ -80,7 +80,7 @@ always @(posedge i_clk or posedge i_rst) begin
         rm_axis_tvalid <= 'd0;
     else if(rm_axis_tlast)
         rm_axis_tvalid <= 'd0;
-    else if(&r_init_cnt && r_pkt_cnt < 10 && s_axis_tready)
+    else if(&r_init_cnt && s_axis_tready)
         rm_axis_tvalid <= 'd1;
     else
         rm_axis_tvalid <= rm_axis_tvalid;
@@ -112,14 +112,14 @@ always @(posedge i_clk or posedge i_rst) begin
     if(i_rst)
         rm_axis_tuser <= 'd0;
     else
-        rm_axis_tuser <= {16'd10,48'h0102_0304_0506,16'h0800};  
+        rm_axis_tuser <= {P_SEND_LEN,48'h0102_0304_0506,16'h0800};  
 end
 
 always @(posedge i_clk or posedge i_rst) begin
     if(i_rst)
         rm_axis_tdata <= 'd0;
     else if(w_axis_active)
-        rm_axis_tdata <= {8{r_send_cnt + 8'd1}};
+        rm_axis_tdata <= {4{r_send_cnt}};
     else
         rm_axis_tdata <= rm_axis_tdata; 
 end

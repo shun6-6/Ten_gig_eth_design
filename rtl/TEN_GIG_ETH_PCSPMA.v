@@ -158,7 +158,7 @@ ten_gig_eth_pcs_pma_0 ten_gig_eth_pcs_pma_u0 (
     .drp_drdy_i             (drp_drdy_i             ),  // input wire drp_drdy_i
     .drp_drpdo_i            (drp_drpdo_i            ),  // input wire [15 : 0] drp_drpdo_i
     .tx_disable             (o_tx_disable           ),  // output wire tx_disable
-    .pma_pmd_type           (3'b101                 )   // input wire [2 : 0] pma_pmd_type
+    .pma_pmd_type           (3'b111                 )   // input wire [2 : 0] pma_pmd_type
 );
 
 

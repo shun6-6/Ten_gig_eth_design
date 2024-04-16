@@ -68,6 +68,8 @@ wire [63:0]     w_xgmii_rxd_7h55    ;
 wire [7 :0]     w_xgmii_rxc_7h55    ;
 wire [63:0]     w_xgmii_txd         ;
 wire [7 :0]     w_xgmii_txc         ;
+wire [63:0]     w_xgmii_txd_7h55    ;
+wire [7 :0]     w_xgmii_txc_7h55    ;
 
 assign o_crc_error = w_crc_error    ;
 assign o_crc_valid = w_crc_valid    ;
@@ -80,6 +82,19 @@ assign o_xgmii_txd = {w_xgmii_txd[7 :0],w_xgmii_txd[15:8],w_xgmii_txd[23:16],w_x
                             w_xgmii_txd[39:32],w_xgmii_txd[47:40],w_xgmii_txd[55:48],w_xgmii_txd[63:56]};
 assign o_xgmii_txc = {w_xgmii_txc[0],w_xgmii_txc[1],w_xgmii_txc[2],w_xgmii_txc[3],
                             w_xgmii_txc[4],w_xgmii_txc[5],w_xgmii_txc[6],w_xgmii_txc[7]};
+
+
+MAC_TX_header MAC_TX_header_u0(
+    .i_clk                          (i_xgmii_clk            ),
+    .i_rst                          (i_xgmii_rst            ),
+
+    .i_xgmii_txd                    (w_xgmii_txd_7h55       ),
+    .i_xgmii_txc                    (w_xgmii_txc_7h55       ),
+
+    .o_xgmii_txd                    (w_xgmii_txd            ),
+    .o_xgmii_txc                    (w_xgmii_txc            )
+);
+
 
 TEN_GIG_MAC_TX#(
     .P_SRC_MAC              (P_SRC_MAC),
@@ -97,8 +112,8 @@ TEN_GIG_MAC_TX#(
     .s_axis_tlast           (s_axis_tlast       ),
     .s_axis_tvalid          (s_axis_tvalid      ),
     .s_axis_tready          (s_axis_tready      ),
-    .o_xgmii_txd            (w_xgmii_txd        ),
-    .o_xgmii_txc            (w_xgmii_txc        ) 
+    .o_xgmii_txd            (w_xgmii_txd_7h55   ),
+    .o_xgmii_txc            (w_xgmii_txc_7h55   ) 
 );
 
 
