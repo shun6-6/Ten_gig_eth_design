@@ -70,37 +70,20 @@ reg  [79:0]     rs_axis_tuser       ;
 reg  [7 :0]     rs_axis_tkeep       ;
 reg             rs_axis_tlast       ;
 reg             rs_axis_tvalid      ;
+wire            ws_axis_tready      ;
+//ip tx test
+reg  [63:0]     rs_axis_upper_data  ;
+reg  [55:0]     rs_axis_upper_user  ;
+reg  [7 :0]     rs_axis_upper_keep  ;
+reg             rs_axis_upper_last  ;
+reg             rs_axis_upper_valid ;
+wire            ws_axis_upper_ready ;
+wire [63:0]     wm_axis_mac_data    ;
+wire [79:0]     wm_axis_mac_user    ;
+wire [7 :0]     wm_axis_mac_keep    ;
+wire            wm_axis_mac_last    ;
+wire            wm_axis_mac_valid   ;
 
-// TEN_GIG_MAC_module #(
-//     .P_SRC_MAC              (48'h01_02_03_04_05_06),
-//     .P_DST_MAC              (48'h01_02_03_04_05_06)
-// )TEN_GIG_MAC_module_u0(
-//     .i_xgmii_clk            (clk        ),
-//     .i_xgmii_rst            (rst        ),
-//     .i_xgmii_rxd            (r_xgmii_rxd        ),
-//     .i_xgmii_rxc            (r_xgmii_rxc        ),
-//     .o_xgmii_txd            (w_xgmii_txd        ),
-//     .o_xgmii_txc            (w_xgmii_txc        ),
-    
-//     .i_dynamic_src_mac      (0),
-//     .i_dynamic_src_valid    (0),
-//     .i_dynamic_dst_mac      (0),
-//     .i_dynamic_dst_valid    (0),
-
-//     .m_axis_rdata           (m_axis_rdata       ),
-//     .m_axis_ruser           (m_axis_ruser       ),
-//     .m_axis_rkeep           (m_axis_rkeep       ),
-//     .m_axis_rlast           (m_axis_rlast       ),
-//     .m_axis_rvalid          (m_axis_rvalid      ),
-//     .o_crc_error            (w_crc_error        ),
-//     .o_crc_valid            (w_crc_valid        ),
-//     .s_axis_tdata           (s_axis_tdata       ),
-//     .s_axis_tuser           (s_axis_tuser       ),
-//     .s_axis_tkeep           (s_axis_tkeep       ),
-//     .s_axis_tlast           (s_axis_tlast       ),
-//     .s_axis_tvalid          (s_axis_tvalid      ),
-//     .s_axis_tready          ()
-// );
 
 
 TEN_GIG_MAC_TX#(
@@ -118,7 +101,7 @@ TEN_GIG_MAC_TX#(
     .s_axis_tkeep           (rs_axis_tkeep       ),
     .s_axis_tlast           (rs_axis_tlast       ),
     .s_axis_tvalid          (rs_axis_tvalid      ),
-    .s_axis_tready          (),
+    .s_axis_tready          (ws_axis_tready),
     .o_xgmii_txd            (),
     .o_xgmii_txc            () 
 );
@@ -158,42 +141,75 @@ CRC_process CRC_process_u0(
     .m_axis_rvalid          (m_crc_axis_rvalid  ) 
 );
 
+IP_module#(
+    .P_SRC_IP_ADDR   ({8'd192,8'd168,8'd100,8'd100 }) ,
+    .P_DST_IP_ADDR   ({8'd192,8'd168,8'd100,8'd100})
+)IP_module_u0(
+    .i_clk                  (clk),
+    .i_rst                  (rst),
+    .i_dynamic_src_ip       (0),
+    .i_dynamic_src_valid    (0),
+    .i_dynamic_dst_ip       (0),
+    .i_dynamic_dst_valid    (0),
+    .m_axis_mac_data        (wm_axis_mac_data ),
+    .m_axis_mac_user        (wm_axis_mac_user ),
+    .m_axis_mac_keep        (wm_axis_mac_keep ),
+    .m_axis_mac_last        (wm_axis_mac_last ),
+    .m_axis_mac_valid       (wm_axis_mac_valid),
+    .s_axis_mac_data        (wm_axis_mac_data ),
+    .s_axis_mac_user        (wm_axis_mac_user ),
+    .s_axis_mac_keep        (wm_axis_mac_keep ),
+    .s_axis_mac_last        (wm_axis_mac_last ),
+    .s_axis_mac_valid       (wm_axis_mac_valid),
+    .m_axis_upper_data      (),
+    .m_axis_upper_user      (),
+    .m_axis_upper_keep      (),
+    .m_axis_upper_last      (),
+    .m_axis_upper_valid     (),
+    .s_axis_upper_data      (rs_axis_upper_data ),
+    .s_axis_upper_user      (rs_axis_upper_user ),
+    .s_axis_upper_keep      (rs_axis_upper_keep ),
+    .s_axis_upper_last      (rs_axis_upper_last ),
+    .s_axis_upper_valid     (rs_axis_upper_valid),
+    .s_axis_upper_ready     (ws_axis_upper_ready) 
+);
+
 initial begin
     r_xgmii_rxd = 'd0;
     r_xgmii_rxc = 'd0; 
     wait(!rst);
     repeat(20) @(posedge clk);
     xgmii_rxd_send_sof7(8'b0000_0001);
-    repeat(20) @(posedge clk);
+    repeat(2) @(posedge clk);
     xgmii_rxd_send_sof7(8'b0000_0010);
-    repeat(20) @(posedge clk);
+    repeat(2) @(posedge clk);
     xgmii_rxd_send_sof7(8'b0000_0100);
-    repeat(20) @(posedge clk);
+    repeat(2) @(posedge clk);
     xgmii_rxd_send_sof7(8'b0000_1000);
-    repeat(20) @(posedge clk);
+    repeat(2) @(posedge clk);
     xgmii_rxd_send_sof7(8'b0001_0000);
-    repeat(20) @(posedge clk);
+    repeat(2) @(posedge clk);
     xgmii_rxd_send_sof7(8'b0010_0000);
-    repeat(20) @(posedge clk);
+    repeat(2) @(posedge clk);
     xgmii_rxd_send_sof7(8'b0100_0000);
-    repeat(20) @(posedge clk);
+    repeat(2) @(posedge clk);
     xgmii_rxd_send_sof7(8'b1000_0000);
 
-    repeat(20) @(posedge clk);
+    repeat(2) @(posedge clk);
     xgmii_rxd_send_sof4(8'b0000_0001);
-    repeat(20) @(posedge clk);
+    repeat(2) @(posedge clk);
     xgmii_rxd_send_sof4(8'b0000_0010);
-    repeat(20) @(posedge clk);
+    repeat(2) @(posedge clk);
     xgmii_rxd_send_sof4(8'b0000_0100);
-    repeat(20) @(posedge clk);
+    repeat(2) @(posedge clk);
     xgmii_rxd_send_sof4(8'b0000_1000);
-    repeat(20) @(posedge clk);
+    repeat(2) @(posedge clk);
     xgmii_rxd_send_sof4(8'b0001_0000);
-    repeat(20) @(posedge clk);
+    repeat(2) @(posedge clk);
     xgmii_rxd_send_sof4(8'b0010_0000);
-    repeat(20) @(posedge clk);
+    repeat(2) @(posedge clk);
     xgmii_rxd_send_sof4(8'b0100_0000);
-    repeat(20) @(posedge clk);
+    repeat(2) @(posedge clk);
     xgmii_rxd_send_sof4(8'b1000_0000);
 end
 
@@ -341,20 +357,48 @@ initial begin
     wait(!rst);
     repeat(10)@(posedge clk);
     mac_tx(8'b1111_1111);
-    repeat(15)@(posedge clk);
+    wait(ws_axis_tready);
     mac_tx(8'b1111_1110);
-    repeat(15)@(posedge clk);
+    wait(ws_axis_tready);
     mac_tx(8'b1111_1100);
-    repeat(15)@(posedge clk);
+    wait(ws_axis_tready);
     mac_tx(8'b1111_1000);
-    repeat(15)@(posedge clk);
+    wait(ws_axis_tready);
     mac_tx(8'b1111_0000);
-    repeat(15)@(posedge clk);
+    wait(ws_axis_tready);
     mac_tx(8'b1110_0000);
-    repeat(15)@(posedge clk);
+    wait(ws_axis_tready);
     mac_tx(8'b1100_0000);
-    repeat(15)@(posedge clk);
+    wait(ws_axis_tready);
     mac_tx(8'b1000_0000);
+end
+
+reg [7:0] ip_tx_cnt;
+
+initial begin:ip_tx_test
+    ip_tx_cnt       = 'd0;
+    rs_axis_upper_data   = 'd0;
+    rs_axis_upper_user   = 'd0;
+    rs_axis_upper_keep   = 'd0;
+    rs_axis_upper_last   = 'd0;
+    rs_axis_upper_valid  = 'd0; 
+    wait(!rst);
+    repeat(10)@(posedge clk);
+    ip_tx(8'b1111_1111);
+    wait(ws_axis_upper_ready);
+    ip_tx(8'b1111_1110);
+    wait(ws_axis_upper_ready);
+    ip_tx(8'b1111_1100);
+    wait(ws_axis_upper_ready);
+    ip_tx(8'b1111_1000);
+    wait(ws_axis_upper_ready);
+    ip_tx(8'b1111_0000);
+    wait(ws_axis_upper_ready);
+    ip_tx(8'b1110_0000);
+    wait(ws_axis_upper_ready);
+    ip_tx(8'b1100_0000);
+    wait(ws_axis_upper_ready);
+    ip_tx(8'b1000_0000);
 end
 
 
@@ -388,6 +432,41 @@ begin : mac_tx
     rs_axis_tkeep  <= 'd0;
     rs_axis_tlast  <= 'd0;
     rs_axis_tvalid <= 'd0; 
+    @(posedge clk);
+end
+endtask
+
+task ip_tx(input [7 :0]keep);
+begin : ip_tx
+    integer i;
+    ip_tx_cnt <= 'd0;
+    rs_axis_upper_data  <= 'd0;
+    rs_axis_upper_user  <= 'd0;
+    rs_axis_upper_keep  <= 'd0;
+    rs_axis_upper_last  <= 'd0;
+    rs_axis_upper_valid <= 'd0; 
+    @(posedge clk);
+    for(i = 0; i < 10; i = i + 1)begin
+        
+        rs_axis_upper_data  <= {8{ip_tx_cnt}};
+        rs_axis_upper_user  <= {16'd10,3'b010,8'd17,13'd0,16'd0};
+        rs_axis_upper_valid <= 'd1;  
+        if(i == 9)begin
+            rs_axis_upper_keep  <= keep;
+            rs_axis_upper_last  <= 'd1;   
+        end else begin
+            rs_axis_upper_keep  <= 8'hff;
+            rs_axis_upper_last  <= 'd0;               
+        end
+        ip_tx_cnt <= i + 1;
+        @(posedge clk);
+    end
+    rs_axis_upper_data  <= 'd0;
+    rs_axis_upper_user  <= 'd0;
+    rs_axis_upper_keep  <= 'd0;
+    rs_axis_upper_last  <= 'd0;
+    rs_axis_upper_valid <= 'd0; 
+    @(posedge clk);
 end
 endtask
 
