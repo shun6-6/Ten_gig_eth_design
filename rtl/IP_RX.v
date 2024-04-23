@@ -250,6 +250,7 @@ always @(posedge i_clk or posedge i_rst)begin
         rm_axis_upper_last <= 'd0; 
 end
 
+//当前数据包发送完成上层可继续发
 always @(posedge i_clk or posedge i_rst)begin
     if(i_rst)
         rm_axis_upper_valid <= 'd0;
