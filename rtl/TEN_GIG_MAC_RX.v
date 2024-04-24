@@ -35,7 +35,7 @@ module TEN_GIG_MAC_RX#(
     input           i_dynamic_dst_valid ,
     
     output [63:0]   m_axis_rdata        ,
-    output [79:0]   m_axis_ruser        ,//用户自定义{16'dlen,r_src_mac[47:0],16'dr_type}
+    output [79:0]   m_axis_ruser        ,//用户自定义{16'dlen,对端mac[47:0],16'dr_type}
     output [7 :0]   m_axis_rkeep        ,
     output          m_axis_rlast        ,
     output          m_axis_rvalid       ,

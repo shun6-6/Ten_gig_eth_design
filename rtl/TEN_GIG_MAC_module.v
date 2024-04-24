@@ -37,7 +37,7 @@ module TEN_GIG_MAC_module#(
     input           i_dynamic_dst_valid ,
     
     output [63:0]   m_axis_rdata        ,
-    output [79:0]   m_axis_ruser        ,//用户自定义
+    output [79:0]   m_axis_ruser        ,//用户自定义{16'dlen,对端mac[47:0],16'dr_type}
     output [7 :0]   m_axis_rkeep        ,
     output          m_axis_rlast        ,
     output          m_axis_rvalid       ,
@@ -45,13 +45,15 @@ module TEN_GIG_MAC_module#(
     output          o_crc_valid         ,
 
     input  [63:0]   s_axis_tdata        ,
-    input  [79:0]   s_axis_tuser        ,//用户自定义
+    input  [79:0]   s_axis_tuser        ,//用户自定义{16'dlen,对端mac[47:0],16'dr_type}
     input  [7 :0]   s_axis_tkeep        ,
     input           s_axis_tlast        ,
     input           s_axis_tvalid       ,
     output          s_axis_tready       
 );
-
+/*对端mac[47:0]:针对接收而言，对端mac指接收MAC数据当中的源mac地址字段；
+* 针对发送端而言，对端mac指发送MAC数据当中的目的mac地址字段。
+*/
 
 wire            w_crc_error         ;
 wire            w_crc_valid         ;
