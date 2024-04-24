@@ -73,7 +73,7 @@ reg  [31:0]     r_recv_src_ip       ;
 reg  [31:0]     r_recv_dst_ip       ;
 reg             r_ip_access         ;
 /******************************wire*********************************/
-
+wire  w_ip_pkt_valid    ;
 /******************************component****************************/
 
 /******************************assign*******************************/
@@ -82,6 +82,7 @@ assign m_axis_upper_user  = rm_axis_upper_user  ;
 assign m_axis_upper_keep  = rm_axis_upper_keep  ;
 assign m_axis_upper_last  = rm_axis_upper_last  ;
 assign m_axis_upper_valid = rm_axis_upper_valid ;
+assign w_ip_pkt_valid     = rs_axis_mac_user[15:0] == 16'h0800;
 /******************************always*******************************/
 always @(posedge i_clk or posedge i_rst)begin
     if(i_rst)
@@ -194,9 +195,9 @@ end
 always @(posedge i_clk or posedge i_rst)begin
     if(i_rst)
         r_ip_access <= 'd0;
-    else if(rs_axis_mac_valid && (r_recv_cnt == 1) && (s_axis_mac_data[63:32] != r_dynamic_src_ip))
+    else if(w_ip_pkt_valid && rs_axis_mac_valid && (r_recv_cnt == 1) && (s_axis_mac_data[63:32] != r_dynamic_src_ip))
         r_ip_access <= 'd0;
-    else if(rs_axis_mac_valid && (r_recv_cnt == 1) && (s_axis_mac_data[63:32] == r_dynamic_src_ip))
+    else if(w_ip_pkt_valid && rs_axis_mac_valid && (r_recv_cnt == 1) && (s_axis_mac_data[63:32] == r_dynamic_src_ip))
         r_ip_access <= 'd1;
     else
         r_ip_access <= r_ip_access; 
