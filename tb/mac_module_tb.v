@@ -221,6 +221,30 @@ ARP_module#(
     .m_axis_arp_valid       (wm_axis_arp_valid      ) 
 );
 
+reg  [63:0]     rs_axis_ip2icmp_data         ;
+reg  [55:0]     rs_axis_ip2icmp_user         ;
+reg  [7 :0]     rs_axis_ip2icmp_keep         ;
+reg             rs_axis_ip2icmp_last         ;
+reg             rs_axis_ip2icmp_valid        ;
+
+ICMP_Module ICMP_Module_u0(
+    .i_clk                 (clk                          ),
+    .i_rst                 (rst                          ),
+
+    .s_axis_ip_data        (rs_axis_ip2icmp_data                ),
+    .s_axis_ip_user        (rs_axis_ip2icmp_user                ),
+    .s_axis_ip_keep        (rs_axis_ip2icmp_keep                ),
+    .s_axis_ip_last        (rs_axis_ip2icmp_last                ),
+    .s_axis_ip_valid       (rs_axis_ip2icmp_valid               ),
+
+    .m_axis_ip_data        (),
+    .m_axis_ip_user        (),
+    .m_axis_ip_keep        (),
+    .m_axis_ip_last        (),
+    .m_axis_ip_valid       (),
+    .m_axis_ip_ready       ()
+);
+
 initial begin
     r_xgmii_rxd = 'd0;
     r_xgmii_rxc = 'd0; 
@@ -462,6 +486,22 @@ initial begin
     arp_seek();
 end
 
+initial
+begin
+    rs_axis_ip2icmp_data  = 'd0;
+    rs_axis_ip2icmp_user  = 'd0;
+    rs_axis_ip2icmp_keep  = 'd0;
+    rs_axis_ip2icmp_last  = 'd0;
+    rs_axis_ip2icmp_valid = 'd0;
+    wait(!rst);
+    repeat(10)@(posedge clk);
+    icmp_send();
+    repeat(10)@(posedge clk);
+
+    icmp_send();
+    repeat(10)@(posedge clk);
+end
+
 
 task mac_tx(input [7 :0]keep);
 begin : mac_tx
@@ -556,6 +596,54 @@ begin:arp_seek
     @(posedge clk);
     ri_seek_ip <= 'd0;  
     ri_seek_valid <= 'd0;
+end
+endtask
+
+
+task icmp_send();
+begin:icmp_send_task
+    rs_axis_ip2icmp_data  <= 'd0;
+    rs_axis_ip2icmp_user  <= 'd0;
+    rs_axis_ip2icmp_keep  <= 'd0;
+    rs_axis_ip2icmp_last  <= 'd0;
+    rs_axis_ip2icmp_valid <= 'd0;
+    @(posedge clk);
+    rs_axis_ip2icmp_data  <= {16'h0800,16'h0000,16'd1,16'd2};
+    rs_axis_ip2icmp_user  <= {16'd5,3'b010,8'd1,13'd0,16'd1};
+    rs_axis_ip2icmp_keep  <= 8'b1111_1111;
+    rs_axis_ip2icmp_last  <= 'd0;
+    rs_axis_ip2icmp_valid <= 'd1;
+    @(posedge clk);
+    rs_axis_ip2icmp_data  <= {64'h6162636465666768};
+    rs_axis_ip2icmp_user  <= {16'd5,3'b010,8'd1,13'd0,16'd1};
+    rs_axis_ip2icmp_keep  <= 8'b1111_1111;
+    rs_axis_ip2icmp_last  <= 'd0;
+    rs_axis_ip2icmp_valid <= 'd1;
+    @(posedge clk);
+    rs_axis_ip2icmp_data  <= {64'h696a6b6c6d6e6f70};
+    rs_axis_ip2icmp_user  <= {16'd5,3'b010,8'd1,13'd0,16'd1};
+    rs_axis_ip2icmp_keep  <= 8'b1111_1111;
+    rs_axis_ip2icmp_last  <= 'd0;
+    rs_axis_ip2icmp_valid <= 'd1;
+    @(posedge clk);
+    rs_axis_ip2icmp_data  <= {64'h7172737475767761};
+    rs_axis_ip2icmp_user  <= {16'd5,3'b010,8'd1,13'd0,16'd1};
+    rs_axis_ip2icmp_keep  <= 8'b1111_1111;
+    rs_axis_ip2icmp_last  <= 'd0;
+    rs_axis_ip2icmp_valid <= 'd1;
+    @(posedge clk);
+    rs_axis_ip2icmp_data  <= {64'h6263646566676869};
+    rs_axis_ip2icmp_user  <= {16'd5,3'b010,8'd1,13'd0,16'd1};
+    rs_axis_ip2icmp_keep  <= 8'b1111_1111;
+    rs_axis_ip2icmp_last  <= 'd1;
+    rs_axis_ip2icmp_valid <= 'd1;
+    @(posedge clk);
+    rs_axis_ip2icmp_data  <= 'd0;
+    rs_axis_ip2icmp_user  <= 'd0;
+    rs_axis_ip2icmp_keep  <= 'd0;
+    rs_axis_ip2icmp_last  <= 'd0;
+    rs_axis_ip2icmp_valid <= 'd0;
+    @(posedge clk);
 end
 endtask
 
