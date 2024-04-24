@@ -174,6 +174,53 @@ IP_module#(
     .s_axis_upper_ready     (ws_axis_upper_ready) 
 );
 
+reg  [63:0]   rs_axis_mac2arp_data  ;
+reg  [79:0]   rs_axis_mac2arp_user  ;
+reg  [7 :0]   rs_axis_mac2arp_keep  ;
+reg           rs_axis_mac2arp_last  ;
+reg           rs_axis_mac2arp_valid ;
+wire [63:0]   wm_axis_arp_data      ;
+wire [79:0]   wm_axis_arp_user      ;
+wire [7 :0]   wm_axis_arp_keep      ;
+wire          wm_axis_arp_last      ;
+wire          wm_axis_arp_valid     ;
+
+wire [47:0]   wo_seek_mac           ;
+wire          wo_seek_mac_valid     ;
+reg  [31:0]   ri_seek_ip            ;
+reg           ri_seek_valid         ;
+reg           ri_arp_active         ;
+reg  [31:0]   ri_arp_active_dst_ip  ;
+
+
+ARP_module#(
+    .P_SRC_IP_ADDR          ({8'd192,8'd168,8'd100,8'd100 }),
+    .P_SRC_MAC_ADDR         (48'h01_02_03_04_05_06)
+)ARP_module_u0(
+    .i_clk                  (clk),
+    .i_rst                  (rst),
+    .i_dymanic_src_ip       (0),
+    .i_src_ip_valid         (0),
+    .i_dymanic_src_mac      (0),
+    .i_src_mac_valid        (0),
+    .i_arp_active           (ri_arp_active),
+    .i_arp_active_dst_ip    (ri_arp_active_dst_ip),
+    .i_seek_ip              (ri_seek_ip             ),
+    .i_seek_valid           (ri_seek_valid          ),
+    .o_seek_mac             (wo_seek_mac            ),
+    .o_seek_mac_valid       (wo_seek_mac_valid      ),
+    .s_axis_mac_data        (wm_axis_arp_data       ),
+    .s_axis_mac_user        (wm_axis_arp_user       ),
+    .s_axis_mac_keep        (wm_axis_arp_keep       ),
+    .s_axis_mac_last        (wm_axis_arp_last       ),
+    .s_axis_mac_valid       (wm_axis_arp_valid      ),
+    .m_axis_arp_data        (wm_axis_arp_data       ),
+    .m_axis_arp_user        (wm_axis_arp_user       ),
+    .m_axis_arp_keep        (wm_axis_arp_keep       ),
+    .m_axis_arp_last        (wm_axis_arp_last       ),
+    .m_axis_arp_valid       (wm_axis_arp_valid      ) 
+);
+
 initial begin
     r_xgmii_rxd = 'd0;
     r_xgmii_rxc = 'd0; 
@@ -401,6 +448,20 @@ initial begin:ip_tx_test
     ip_tx(8'b1000_0000);
 end
 
+initial begin
+    ri_arp_active = 0;
+    ri_arp_active_dst_ip = 0;
+    ri_seek_ip    = 0;
+    ri_seek_valid = 0;
+    wait(!rst);
+    repeat(10)@(posedge clk);
+    arp_active();
+    repeat(100)@(posedge clk);
+    arp_active();
+    repeat(10)@(posedge clk);
+    arp_seek();
+end
+
 
 task mac_tx(input [7 :0]keep);
 begin : mac_tx
@@ -467,6 +528,34 @@ begin : ip_tx
     rs_axis_upper_last  <= 'd0;
     rs_axis_upper_valid <= 'd0; 
     @(posedge clk);
+end
+endtask
+
+task arp_active();
+begin:arp_active
+    ri_arp_active <= 'd0;
+    ri_arp_active_dst_ip <= 'd0;
+    @(posedge clk);
+    repeat(10)@(posedge clk);
+    ri_arp_active <= 'd1;
+    ri_arp_active_dst_ip <= {8'd192,8'd168,8'd100,8'd100 };
+    @(posedge clk);
+    ri_arp_active <= 'd0;  
+    ri_arp_active_dst_ip <= 'd0;
+end
+endtask
+
+task arp_seek();
+begin:arp_seek
+    ri_seek_ip    <= 'd0;
+    ri_seek_valid <= 'd0;
+    @(posedge clk);
+    repeat(10)@(posedge clk);
+    ri_seek_valid <= 'd1;
+    ri_seek_ip <= {8'd192,8'd168,8'd100,8'd100 };
+    @(posedge clk);
+    ri_seek_ip <= 'd0;  
+    ri_seek_valid <= 'd0;
 end
 endtask
 
