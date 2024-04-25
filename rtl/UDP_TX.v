@@ -69,11 +69,13 @@ reg             rm_axis_ip_valid    ;
 reg  [15:0]     r_pkt_cnt           ;
 reg             r_fifo_data_rden    ;
 reg  [7 :0]     r_tail_keep         ;
-reg  [15:0]     r_pkt_len           ;
+reg  [15:0]     r_byte_len           ;
+
 /******************************wire*********************************/
 wire [63:0]     w_fifo_data_dout    ;
 wire            w_fifo_data_full    ;
 wire            w_fifo_data_empty   ;
+wire [15:0]     w_64bit_len         ;
 /******************************assign*******************************/
 assign m_axis_ip_data  = rm_axis_ip_data    ;
 assign m_axis_ip_user  = rm_axis_ip_user    ;
@@ -81,6 +83,8 @@ assign m_axis_ip_keep  = rm_axis_ip_keep    ;
 assign m_axis_ip_last  = rm_axis_ip_last    ;
 assign m_axis_ip_valid = rm_axis_ip_valid   ;
 assign s_axis_user_ready = rs_axis_user_ready   ;
+assign w_64bit_len = r_byte_len[2:0] == 0 ? (r_byte_len >> 3) 
+                    : (r_byte_len >> 3) + 1 ;
 /******************************component****************************/
 FIFO_64X256 FIFO_64X256_UDP_data_tx (
   .clk          (i_clk              ),
@@ -150,17 +154,17 @@ end
 
 always @(posedge i_clk or posedge i_rst) begin
     if(i_rst)
-        r_pkt_len <= 'd0;
+        r_byte_len <= 'd0;
     else if(s_axis_user_valid && !rs_axis_user_valid)
-        r_pkt_len <= s_axis_user_user[15:0];
+        r_byte_len <= s_axis_user_user[15:0];
     else
-        r_pkt_len <= r_pkt_len; 
+        r_byte_len <= r_byte_len; 
 end
 
 always @(posedge i_clk or posedge i_rst) begin
     if(i_rst)
         r_fifo_data_rden <= 'd0;
-    else if(r_pkt_cnt == r_pkt_len - 1)
+    else if(r_pkt_cnt == w_64bit_len - 1)
         r_fifo_data_rden <= 'd0;
     else if(!w_fifo_data_empty && m_axis_ip_ready)
         r_fifo_data_rden <= 'd1;
@@ -171,7 +175,7 @@ end
 always @(posedge i_clk or posedge i_rst) begin
     if(i_rst)
         r_pkt_cnt <= 'd0;
-    else if(r_pkt_cnt == r_pkt_len && r_pkt_len != 0)
+    else if(r_pkt_cnt == w_64bit_len && w_64bit_len != 0)
         r_pkt_cnt <= 'd0;
     else if(r_fifo_data_rden)
         r_pkt_cnt <= r_pkt_cnt + 'd1;
@@ -186,7 +190,7 @@ always @(posedge i_clk or posedge i_rst) begin
     else
         case (r_pkt_cnt)
             0       : rm_axis_ip_data <= {  ri_dymanic_src_port,ri_dymanic_dst_port,
-                                            (r_pkt_len + 16'd1),16'd0};
+                                            (r_byte_len + 16'd8),16'd0};
             default : rm_axis_ip_data <= w_fifo_data_dout;
         endcase      
 end
@@ -195,13 +199,13 @@ always @(posedge i_clk or posedge i_rst) begin
     if(i_rst)
         rm_axis_ip_user <= 'd0;
     else
-        rm_axis_ip_user <= {r_pkt_len + 16'd1, 3'b010, 8'd17, 13'd0, 16'd0};
+        rm_axis_ip_user <= {r_byte_len + 16'd8, 3'b010, 8'd17, 13'd0, 16'd0};
 end
 
 always @(posedge i_clk or posedge i_rst) begin
     if(i_rst)
         rm_axis_ip_keep <= 8'hff;
-    else if(r_pkt_cnt == r_pkt_len && r_pkt_len != 0)
+    else if(r_pkt_cnt == w_64bit_len && w_64bit_len != 0)
         rm_axis_ip_keep <= r_tail_keep;
     else
         rm_axis_ip_keep <= 8'hff;
@@ -210,7 +214,7 @@ end
 always @(posedge i_clk or posedge i_rst) begin
     if(i_rst)
         rm_axis_ip_last <= 'd0;
-    else if(r_pkt_cnt == r_pkt_len && r_pkt_len != 0)
+    else if(r_pkt_cnt == w_64bit_len && w_64bit_len != 0)
         rm_axis_ip_last <= 'd1;
     else
         rm_axis_ip_last <= 'd0;

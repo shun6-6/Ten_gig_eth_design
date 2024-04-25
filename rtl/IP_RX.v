@@ -73,7 +73,9 @@ reg  [31:0]     r_recv_src_ip       ;
 reg  [31:0]     r_recv_dst_ip       ;
 reg             r_ip_access         ;
 /******************************wire*********************************/
-wire  w_ip_pkt_valid    ;
+wire        w_ip_pkt_valid  ;
+wire [15:0] w_ip_pkt_64bit_len    ;
+wire [15:0] w_ip_pkt_payload_len    ;
 /******************************component****************************/
 
 /******************************assign*******************************/
@@ -83,6 +85,9 @@ assign m_axis_upper_keep  = rm_axis_upper_keep  ;
 assign m_axis_upper_last  = rm_axis_upper_last  ;
 assign m_axis_upper_valid = rm_axis_upper_valid ;
 assign w_ip_pkt_valid     = rs_axis_mac_user[15:0] == 16'h0800;
+assign w_ip_pkt_payload_len = r_ip_total_length - 16'd20;
+assign w_ip_pkt_64bit_len = w_ip_pkt_payload_len[2:0] == 0 ? w_ip_pkt_payload_len >> 3
+                            :  ((w_ip_pkt_payload_len >> 3) + 16'd1);
 /******************************always*******************************/
 always @(posedge i_clk or posedge i_rst)begin
     if(i_rst)
@@ -214,7 +219,7 @@ always @(posedge i_clk or posedge i_rst)begin
     if(i_rst)
         rm_axis_upper_user <= 'd0;
     else
-        rm_axis_upper_user <= {{r_ip_total_length - 16'd20},r_flags,r_protocol_type,r_offset,r_Identification};
+        rm_axis_upper_user <= {w_ip_pkt_payload_len,r_flags,r_protocol_type,r_offset,r_Identification};
 end
 
 always @(posedge i_clk or posedge i_rst)begin

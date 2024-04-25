@@ -721,6 +721,7 @@ end
 endtask
 
 
+
 reg [15:0]udp_tx_cnt;  
 task udp_tx(input [7 :0]keep);
 begin : udp_tx
@@ -735,7 +736,7 @@ begin : udp_tx
     for(i = 0; i < 10; i = i + 1)begin
         
         rs_axis_user_data  <= {8{udp_tx_cnt}};
-        rs_axis_user_user  <= {16'd0,16'd10};
+        rs_axis_user_user  <= {16'd0,(16'd80)};
         rs_axis_user_valid <= 'd1;  
         if(i == 9)begin
             rs_axis_user_keep  <= keep;

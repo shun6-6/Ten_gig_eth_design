@@ -96,7 +96,7 @@ begin
     if(i_rst)
         rm_axis_ip_user <= 'd0;
     else 
-        rm_axis_ip_user <= {16'd5,3'b010,8'd1,13'd0,16'd1};
+        rm_axis_ip_user <= {16'd40,3'b010,8'd1,13'd0,16'd1};
 end
 
 always@(posedge i_clk,posedge i_rst)

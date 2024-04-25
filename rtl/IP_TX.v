@@ -86,6 +86,8 @@ wire [7 :0]     w_upper_type        ;
 wire [12:0]     w_upper_offset      ;
 wire [15:0]     w_upper_ID          ;  
 
+wire [15:0]     w_upper_64bit_len   ;
+
 wire            w_fifo_empty_pos    ;
 wire            w_fifo_empty_pos_1d ;
 /******************************component****************************/
@@ -107,7 +109,7 @@ assign m_axis_mac_last  = rm_axis_mac_last  ;
 assign m_axis_mac_valid = rm_axis_mac_valid ;
 assign s_axis_upper_ready = rs_axis_upper_ready;
 
-assign w_upper_len      = rs_axis_upper_user[55:40];
+assign w_upper_len      = rs_axis_upper_user[55:40] + 16'd20;
 assign w_upper_flags    = rs_axis_upper_user[39:37];
 assign w_upper_type     = rs_axis_upper_user[36:29];
 assign w_upper_offset   = rs_axis_upper_user[28:16];
@@ -115,6 +117,9 @@ assign w_upper_ID       = rs_axis_upper_user[15 :0];
 
 assign w_fifo_empty_pos    = w_data_fifo_empty & !r_data_fifo_empty;
 assign w_fifo_empty_pos_1d = r_data_fifo_empty & !r_data_fifo_empty_1d;
+
+assign w_upper_64bit_len = w_upper_len[2:0] == 0 ? (w_upper_len >> 3)
+                            : (w_upper_len >> 3) + 1 ;
 /******************************always*******************************/
 always @(posedge i_clk or posedge i_rst)begin
     if(i_rst)
@@ -164,7 +169,7 @@ always @(posedge i_clk or posedge i_rst)begin
     if(i_rst)
         r_checksum <= 'd0;
     else if(r_recv_cnt == 1)
-        r_checksum <= 16'h4500 + (w_upper_len + 16'd20) +
+        r_checksum <= 16'h4500 + w_upper_len +
                         w_upper_ID + {w_upper_flags,w_upper_offset} + 
                         {8'd128,w_upper_type} + 16'd0 + 
                         r_dynamic_src_ip[31:16] + r_dynamic_src_ip[15:0] + 
@@ -212,7 +217,7 @@ always @(posedge i_clk or posedge i_rst)begin
         rm_axis_mac_data <= 'd0;
     else
         case (r_pkt_cnt)
-            0       : rm_axis_mac_data <= {4'b0100,4'b0101,8'd0,{w_upper_len + 16'd20},
+            0       : rm_axis_mac_data <= {4'b0100,4'b0101,8'd0,{w_upper_len},
                                             w_upper_ID,w_upper_flags,w_upper_offset};
 
             1       : rm_axis_mac_data <= {8'd128,w_upper_type,(~r_checksum[15:0]),
@@ -282,8 +287,8 @@ end
 always @(posedge i_clk or posedge i_rst)begin
     if(i_rst)
         rm_axis_mac_user <= 'd0;
-    else if(rs_axis_upper_valid & !rs_axis_upper_valid)
-        rm_axis_mac_user <= {{w_upper_len + 16'd20},48'd0,16'h0800}; 
+    else if(rs_axis_upper_valid & !rs_axis_upper_valid_1d)
+        rm_axis_mac_user <= {w_upper_64bit_len,48'd0,16'h0800}; 
 end
 
 //当前数据发完，上层数据可以继续发送

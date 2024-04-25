@@ -55,7 +55,7 @@ reg  [7 :0]     rs_axis_ip_keep     ;
 reg             rs_axis_ip_last     ;
 reg             rs_axis_ip_valid    ;
 reg  [63:0]     rm_axis_user_data   ;
-reg  [55:0]     rm_axis_user_user   ;
+reg  [31:0]     rm_axis_user_user   ;
 reg  [7 :0]     rm_axis_user_keep   ;
 reg             rm_axis_user_last   ;
 reg             rm_axis_user_valid  ;
@@ -66,13 +66,18 @@ reg  [15:0]     r_recv_dst_port     ;
 reg  [15:0]     r_recv_pkt_len      ;
 reg             r_access            ;
 /******************************wire*********************************/
-
+wire [15:0]     w_64bit_len         ;
+wire [15:0]     w_byte_len          ;
 /******************************assign*******************************/
 assign m_axis_user_data  = rm_axis_user_data    ;
 assign m_axis_user_user  = rm_axis_user_user    ;
 assign m_axis_user_keep  = rm_axis_user_keep    ;
 assign m_axis_user_last  = rm_axis_user_last    ;
 assign m_axis_user_valid = rm_axis_user_valid   ;
+
+assign w_byte_len  = rs_axis_ip_user[55:40];
+assign w_64bit_len = w_byte_len[2:0] == 0 ? (w_byte_len >> 3) 
+                        : (w_byte_len >> 3) + 1;
 /******************************component****************************/
 
 /******************************always*******************************/
@@ -147,7 +152,7 @@ always @(posedge i_clk or posedge i_rst) begin
     if(i_rst)
         r_recv_pkt_len <= 'd0;
     else if(r_recv_cnt == 0 && rs_axis_ip_valid)
-        r_recv_pkt_len <= rs_axis_ip_user[55:40];
+        r_recv_pkt_len <= w_64bit_len;
     else
         r_recv_pkt_len <= r_recv_pkt_len;
 end

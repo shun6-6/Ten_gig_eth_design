@@ -200,9 +200,9 @@ always @(posedge i_clk or posedge i_rst) begin
     if(i_rst)
         rm_axis_arp_user <= 'd0;
     else if(ri_arp_active)
-        rm_axis_arp_user <= {16'd48,48'hff_ff_ff_ff_ff_ff,16'h0806};
+        rm_axis_arp_user <= {16'd6,48'hff_ff_ff_ff_ff_ff,16'h0806};
     else if(ri_arp_reply)
-        rm_axis_arp_user <= {16'd48,ri_recv_target_mac,16'h0806};
+        rm_axis_arp_user <= {16'd6,ri_recv_target_mac,16'h0806};
     else
         rm_axis_arp_user <= rm_axis_arp_user;
 end
