@@ -237,7 +237,7 @@ end
 always @(posedge i_clk or posedge i_rst)begin
     if(i_rst)
         r_fifo_c0_user_rden <= 'd0;
-    else if(w_arbiter_lock_pos && !r_arbiter_flag && !w_fifo_c0_user_empty)
+    else if(w_arbiter_lock_pos && !r_arbiter_flag && !w_fifo_c0_user_empty && m_axis_out_ready)
         r_fifo_c0_user_rden <= 'd1;
     else
         r_fifo_c0_user_rden <= 'd0;
@@ -246,7 +246,7 @@ end
 always @(posedge i_clk or posedge i_rst)begin
     if(i_rst)
         r_fifo_c1_user_rden <= 'd0;
-    else if(w_arbiter_lock_pos && r_arbiter_flag && !w_fifo_c1_user_empty)
+    else if(w_arbiter_lock_pos && r_arbiter_flag && !w_fifo_c1_user_empty && m_axis_out_ready)
         r_fifo_c1_user_rden <= 'd1;
     else
         r_fifo_c1_user_rden <= 'd0;

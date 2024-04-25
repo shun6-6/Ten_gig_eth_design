@@ -245,6 +245,54 @@ ICMP_Module ICMP_Module_u0(
     .m_axis_ip_ready       ()
 );
 
+wire [63:0]   wm_axis_ip2udp_data ;
+wire [55:0]   wm_axis_ip2udp_user ;
+wire [7 :0]   wm_axis_ip2udp_keep ;
+wire          wm_axis_ip2udp_last ;
+wire          wm_axis_ip2udp_valid;
+
+reg  [63:0]   rs_axis_user_data     ;
+reg  [31:0]   rs_axis_user_user     ;
+reg  [7 :0]   rs_axis_user_keep     ;
+reg           rs_axis_user_last     ;
+reg           rs_axis_user_valid    ;
+wire          ws_axis_user_ready    ;
+
+UDP_module#(
+    .P_SRC_UDP_PORT         (16'h0808),
+    .P_DST_UDP_PORT         (16'h0808)
+)UDP_module_u0(
+    .i_clk                  (clk),
+    .i_rst                  (rst),
+    .i_dymanic_src_port     (0),
+    .i_dymanic_src_valid    (0),
+    .i_dymanic_dst_port     (0),
+    .i_dymanic_dst_valid    (0),
+    .m_axis_ip_data         (wm_axis_ip2udp_data ),
+    .m_axis_ip_user         (wm_axis_ip2udp_user ),//用户自定义{16'dlen,3'bflag,8'dtype,13'doffset,16'dID}
+    .m_axis_ip_keep         (wm_axis_ip2udp_keep ),
+    .m_axis_ip_last         (wm_axis_ip2udp_last ),
+    .m_axis_ip_valid        (wm_axis_ip2udp_valid),
+    .m_axis_ip_ready        (1),
+    .s_axis_ip_data         (wm_axis_ip2udp_data ),
+    .s_axis_ip_user         (wm_axis_ip2udp_user ),
+    .s_axis_ip_keep         (wm_axis_ip2udp_keep ),
+    .s_axis_ip_last         (wm_axis_ip2udp_last ),
+    .s_axis_ip_valid        (wm_axis_ip2udp_valid),
+
+    .m_axis_user_data       (),
+    .m_axis_user_user       (),
+    .m_axis_user_keep       (),
+    .m_axis_user_last       (),
+    .m_axis_user_valid      (),
+    .s_axis_user_data       (rs_axis_user_data ),
+    .s_axis_user_user       (rs_axis_user_user ),
+    .s_axis_user_keep       (rs_axis_user_keep ),
+    .s_axis_user_last       (rs_axis_user_last ),
+    .s_axis_user_valid      (rs_axis_user_valid),
+    .s_axis_user_ready      (ws_axis_user_ready)
+);
+
 initial begin
     r_xgmii_rxd = 'd0;
     r_xgmii_rxc = 'd0; 
@@ -502,6 +550,31 @@ begin
     repeat(10)@(posedge clk);
 end
 
+initial begin
+    rs_axis_user_data  = 0;
+    rs_axis_user_user  = 0;
+    rs_axis_user_keep  = 0;
+    rs_axis_user_last  = 0;
+    rs_axis_user_valid = 0;
+    wait(!rst);
+    repeat(10)@(posedge clk);
+    udp_tx(8'b1111_1111);
+    wait(ws_axis_user_ready);
+    udp_tx(8'b1111_1110);
+    wait(ws_axis_user_ready);
+    udp_tx(8'b1111_1100);
+    wait(ws_axis_user_ready);
+    udp_tx(8'b1111_1000);
+    wait(ws_axis_user_ready);
+    udp_tx(8'b1111_0000);
+    wait(ws_axis_user_ready);
+    udp_tx(8'b1110_0000);
+    wait(ws_axis_user_ready);
+    udp_tx(8'b1100_0000);
+    wait(ws_axis_user_ready);
+    udp_tx(8'b1000_0000);
+end
+
 
 task mac_tx(input [7 :0]keep);
 begin : mac_tx
@@ -643,6 +716,42 @@ begin:icmp_send_task
     rs_axis_ip2icmp_keep  <= 'd0;
     rs_axis_ip2icmp_last  <= 'd0;
     rs_axis_ip2icmp_valid <= 'd0;
+    @(posedge clk);
+end
+endtask
+
+
+reg [15:0]udp_tx_cnt;  
+task udp_tx(input [7 :0]keep);
+begin : udp_tx
+    integer i;
+    udp_tx_cnt <= 'd0;
+    rs_axis_user_data  <= 'd0;
+    rs_axis_user_user  <= 'd0;
+    rs_axis_user_keep  <= 'd0;
+    rs_axis_user_last  <= 'd0;
+    rs_axis_user_valid <= 'd0; 
+    @(posedge clk);
+    for(i = 0; i < 10; i = i + 1)begin
+        
+        rs_axis_user_data  <= {8{udp_tx_cnt}};
+        rs_axis_user_user  <= {16'd0,16'd10};
+        rs_axis_user_valid <= 'd1;  
+        if(i == 9)begin
+            rs_axis_user_keep  <= keep;
+            rs_axis_user_last  <= 'd1;   
+        end else begin
+            rs_axis_user_keep  <= 8'hff;
+            rs_axis_user_last  <= 'd0;               
+        end
+        udp_tx_cnt <= i + 1;
+        @(posedge clk);
+    end
+    rs_axis_user_data  <= 'd0;
+    rs_axis_user_user  <= 'd0;
+    rs_axis_user_keep  <= 'd0;
+    rs_axis_user_last  <= 'd0;
+    rs_axis_user_valid <= 'd0; 
     @(posedge clk);
 end
 endtask
