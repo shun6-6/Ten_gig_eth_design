@@ -64,7 +64,7 @@ reg  [15:0]     r_recv_cnt          ;
 reg  [15:0]     r_recv_src_port     ;
 reg  [15:0]     r_recv_dst_port     ;
 reg  [15:0]     r_recv_pkt_len      ;
-reg             r_access            ;
+reg             r_udp_pkt_valid     ;
 /******************************wire*********************************/
 wire [15:0]     w_64bit_len         ;
 wire [15:0]     w_byte_len          ;
@@ -138,13 +138,13 @@ end
 
 always @(posedge i_clk or posedge i_rst) begin
     if(i_rst)
-        r_access <= 'd0;
+        r_udp_pkt_valid <= 'd0;
     else if(r_recv_cnt == 0 && rs_axis_ip_valid && rs_axis_ip_data[47:32] != ri_dymanic_src_port)
-        r_access <= 'd0;
+        r_udp_pkt_valid <= 'd0;
     else if(r_recv_cnt == 0 && rs_axis_ip_valid && rs_axis_ip_data[47:32] == ri_dymanic_src_port)
-        r_access <= 'd1;
+        r_udp_pkt_valid <= 'd1;
     else
-        r_access <= r_access;
+        r_udp_pkt_valid <= r_udp_pkt_valid;
 end
 
 //长度是以8字节为单位的，因为一拍数据是64比特
@@ -196,7 +196,7 @@ always @(posedge i_clk or posedge i_rst) begin
         rm_axis_user_valid <= 'd0;
     else if(rm_axis_user_last)
         rm_axis_user_valid <= 'd0;
-    else if(r_recv_cnt == 1 && r_access)
+    else if(r_recv_cnt == 1 && r_udp_pkt_valid)
         rm_axis_user_valid <= 'd1;
     else
         rm_axis_user_valid <= rm_axis_user_valid;

@@ -36,6 +36,7 @@ module IP_TX#(
     output [7 :0]   m_axis_mac_keep     ,
     output          m_axis_mac_last     ,
     output          m_axis_mac_valid    ,
+    input           m_axis_mac_ready    ,
     /*****upper layer AXIS interface*****/
     input  [63:0]   s_axis_upper_data   ,
     input  [55:0]   s_axis_upper_user   ,//用户自定义{16'dlen,3'flag,8'dtype,13'doffset,16'dID}
@@ -206,7 +207,7 @@ always @(posedge i_clk or posedge i_rst)begin
         r_data_fifo_rden <= 'd0;
     else if(w_data_fifo_empty)
         r_data_fifo_rden <= 'd0 ;
-    else if(r_pkt_cnt == 0 && !w_data_fifo_empty)
+    else if(r_pkt_cnt == 0 && !w_data_fifo_empty && m_axis_mac_ready)
         r_data_fifo_rden <= 'd1 ;
     else
         r_data_fifo_rden <= r_data_fifo_rden;

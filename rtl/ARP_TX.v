@@ -42,7 +42,8 @@ module ARP_TX#(
     output [79:0]   m_axis_arp_user     ,
     output [7 :0]   m_axis_arp_keep     ,
     output          m_axis_arp_last     ,
-    output          m_axis_arp_valid    
+    output          m_axis_arp_valid    ,
+    input           m_axis_arp_ready    
 );
 /******************************function*****************************/
 
@@ -147,7 +148,7 @@ always @(posedge i_clk or posedge i_rst) begin
         r_pkt_cnt <= 'd0;
     else if(r_pkt_cnt == 5)
         r_pkt_cnt <= 'd0;
-    else if(ri_arp_reply || ri_arp_active || r_pkt_cnt)
+    else if((ri_arp_reply || ri_arp_active || r_pkt_cnt) && m_axis_arp_ready)
         r_pkt_cnt <= r_pkt_cnt + 'd1;
     else
         r_pkt_cnt <= r_pkt_cnt; 
@@ -189,7 +190,7 @@ always @(posedge i_clk or posedge i_rst) begin
         rm_axis_arp_valid <= 'd0;
     else if(rm_axis_arp_last)
         rm_axis_arp_valid <= 'd0;
-    else if(ri_arp_reply || ri_arp_active)
+    else if((ri_arp_reply || ri_arp_active) && m_axis_arp_ready)
         rm_axis_arp_valid <= 'd1;
     else
         rm_axis_arp_valid <= rm_axis_arp_valid;

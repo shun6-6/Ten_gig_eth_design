@@ -37,6 +37,7 @@ module IP_module#(
     output [7 :0]   m_axis_mac_keep     ,
     output          m_axis_mac_last     ,
     output          m_axis_mac_valid    ,
+    input           m_axis_mac_ready    ,
 
     input  [63:0]   s_axis_mac_data     ,
     input  [79:0]   s_axis_mac_user     ,
@@ -74,6 +75,7 @@ IP_TX#(
     .m_axis_mac_keep        (m_axis_mac_keep    ),
     .m_axis_mac_last        (m_axis_mac_last    ),
     .m_axis_mac_valid       (m_axis_mac_valid   ),
+    .m_axis_mac_ready       (m_axis_mac_ready   ),
     .s_axis_upper_data      (s_axis_upper_data  ),
     .s_axis_upper_user      (s_axis_upper_user  ),
     .s_axis_upper_keep      (s_axis_upper_keep  ),

@@ -128,16 +128,16 @@ ten_gig_eth_pcs_pma_gt_common_block
     .qplloutrefclk          (w_qplloutrefclk    )
 );
 
-AXIS_test_module AXIS_test_module_u0(
-    .i_clk                  (w_xgmii_clk        ),
-    .i_rst                  (w_xgmii_rst || (!w_block_sync)),
-    .m_axis_tdata           (s_axis_tdata       ),
-    .m_axis_tuser           (s_axis_tuser       ),
-    .m_axis_tkeep           (s_axis_tkeep       ),
-    .m_axis_tlast           (s_axis_tlast       ),
-    .m_axis_tvalid          (s_axis_tvalid      ),
-    .s_axis_tready          (s_axis_tready      )
-);
+// AXIS_test_module AXIS_test_module_u0(
+//     .i_clk                  (w_xgmii_clk        ),
+//     .i_rst                  (w_xgmii_rst || (!w_block_sync)),
+//     .m_axis_tdata           (s_axis_tdata       ),
+//     .m_axis_tuser           (s_axis_tuser       ),
+//     .m_axis_tkeep           (s_axis_tkeep       ),
+//     .m_axis_tlast           (s_axis_tlast       ),
+//     .m_axis_tvalid          (s_axis_tvalid      ),
+//     .s_axis_tready          (s_axis_tready      )
+// );
 
 
 

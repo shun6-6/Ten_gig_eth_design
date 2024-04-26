@@ -49,7 +49,8 @@ module ARP_module#(
     output [79:0]   m_axis_arp_user     ,
     output [7 :0]   m_axis_arp_keep     ,
     output          m_axis_arp_last     ,
-    output          m_axis_arp_valid    
+    output          m_axis_arp_valid    ,
+    input           m_axis_arp_ready    
 );
 
 wire [47:0]     w_recv_target_mac   ;
