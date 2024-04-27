@@ -90,7 +90,8 @@ ARP_TX#(
     .m_axis_arp_user        (m_axis_arp_user    ),
     .m_axis_arp_keep        (m_axis_arp_keep    ),
     .m_axis_arp_last        (m_axis_arp_last    ),
-    .m_axis_arp_valid       (m_axis_arp_valid   ) 
+    .m_axis_arp_valid       (m_axis_arp_valid   ),
+    .m_axis_arp_ready       (m_axis_arp_ready   )
 );
 
 ARP_RX#(

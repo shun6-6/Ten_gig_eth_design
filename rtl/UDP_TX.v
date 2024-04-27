@@ -69,7 +69,7 @@ reg             rm_axis_ip_valid    ;
 reg  [15:0]     r_pkt_cnt           ;
 reg             r_fifo_data_rden    ;
 reg  [7 :0]     r_tail_keep         ;
-reg  [15:0]     r_byte_len           ;
+reg  [15:0]     r_byte_len          ;
 
 /******************************wire*********************************/
 wire [63:0]     w_fifo_data_dout    ;
@@ -134,7 +134,7 @@ end
 
 always @(posedge i_clk or posedge i_rst) begin
     if(i_rst)
-        rs_axis_user_ready <= 'd0;
+        rs_axis_user_ready <= 'd1;
     else if(s_axis_user_last)
         rs_axis_user_ready <= 'd0;
     else if(w_fifo_data_empty)

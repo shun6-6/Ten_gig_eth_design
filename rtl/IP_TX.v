@@ -30,6 +30,11 @@ module IP_TX#(
     input           i_dynamic_src_valid ,
     input  [31:0]   i_dynamic_dst_ip    ,
     input           i_dynamic_dst_valid ,
+
+    output [31:0]   o_seek_ip           ,
+    output          o_seek_ip_valid     ,
+    input  [47:0]   i_seek_mac          ,
+    input           i_seek_mac_valid    ,
     /*****MAC AXIS interface*****/
     output [63:0]   m_axis_mac_data     ,
     output [79:0]   m_axis_mac_user     ,//用户自定义{16'dlen,r_src_mac[47:0],16'dr_type}
@@ -67,6 +72,10 @@ reg             rs_axis_upper_valid ;
 reg             rs_axis_upper_ready ;
 reg             rs_axis_upper_valid_1d;
 
+reg  [31:0]     ro_seek_ip          ;
+reg             ro_seek_ip_valid    ;
+reg  [47:0]     ri_seek_mac         ;
+
 reg  [31:0]     r_checksum          ;
 reg  [15:0]     r_recv_cnt          ;
 reg  [7 :0]     r_tail_keep         ;
@@ -81,18 +90,18 @@ wire [63:0]     w_data_fifo_dout    ;
 wire            w_data_fifo_full    ;
 wire            w_data_fifo_empty   ;
 //user信息 {16'dlen,3'flag,8'dtype,13'doffset,16'dID}
-wire [15:0]     w_upper_len         ;
+wire [15:0]     w_ip_byte_len         ;
 wire [2 :0]     w_upper_flags       ;
 wire [7 :0]     w_upper_type        ;
 wire [12:0]     w_upper_offset      ;
 wire [15:0]     w_upper_ID          ;  
 
-wire [15:0]     w_upper_64bit_len   ;
+wire [15:0]     w_ip_64bit_len   ;
 
 wire            w_fifo_empty_pos    ;
 wire            w_fifo_empty_pos_1d ;
 /******************************component****************************/
-FIFO_64X16 FIFO_64X16_IP_DATA_TX (
+FIFO_64X256 FIFO_64X256_IP_DATA_TX (
   .clk      (i_clk              ), // input wire clk
   .srst     (i_rst              ), // input wire srst
   .din      (rs_axis_upper_data ), // input wire [63 : 0] din
@@ -110,7 +119,7 @@ assign m_axis_mac_last  = rm_axis_mac_last  ;
 assign m_axis_mac_valid = rm_axis_mac_valid ;
 assign s_axis_upper_ready = rs_axis_upper_ready;
 
-assign w_upper_len      = rs_axis_upper_user[55:40] + 16'd20;
+assign w_ip_byte_len      = rs_axis_upper_user[55:40] + 16'd20;
 assign w_upper_flags    = rs_axis_upper_user[39:37];
 assign w_upper_type     = rs_axis_upper_user[36:29];
 assign w_upper_offset   = rs_axis_upper_user[28:16];
@@ -119,8 +128,11 @@ assign w_upper_ID       = rs_axis_upper_user[15 :0];
 assign w_fifo_empty_pos    = w_data_fifo_empty & !r_data_fifo_empty;
 assign w_fifo_empty_pos_1d = r_data_fifo_empty & !r_data_fifo_empty_1d;
 
-assign w_upper_64bit_len = w_upper_len[2:0] == 0 ? (w_upper_len >> 3)
-                            : (w_upper_len >> 3) + 1 ;
+assign w_ip_64bit_len = w_ip_byte_len[2:0] == 0 ? (w_ip_byte_len >> 3)
+                            : (w_ip_byte_len >> 3) + 1 ;
+
+assign o_seek_ip        = ro_seek_ip        ;  
+assign o_seek_ip_valid  = ro_seek_ip_valid  ;
 /******************************always*******************************/
 always @(posedge i_clk or posedge i_rst)begin
     if(i_rst)
@@ -165,12 +177,40 @@ always @(posedge i_clk or posedge i_rst)begin
     end
 end
 
+//当有数据要发送时，进行MAC查询    
+always @(posedge i_clk or posedge i_rst)begin
+    if(i_rst)
+        ro_seek_ip <= 'd0;
+    else
+        ro_seek_ip <= r_dynamic_dst_ip;
+end
+
+always @(posedge i_clk or posedge i_rst)begin
+    if(i_rst)
+        ro_seek_ip_valid <= 'd0;
+    else if(s_axis_upper_valid && !rs_axis_upper_valid)
+        ro_seek_ip_valid <= 'd1;
+    else
+        ro_seek_ip_valid <= 'd0;
+end
+
+//获得查询结果
+always @(posedge i_clk or posedge i_rst)begin
+    if(i_rst)
+        ri_seek_mac <= 'd0;
+    else if(i_seek_mac_valid)
+        ri_seek_mac <= i_seek_mac;
+    else
+        ri_seek_mac <= ri_seek_mac;
+end
+
+
 //计算checksum
 always @(posedge i_clk or posedge i_rst)begin
     if(i_rst)
         r_checksum <= 'd0;
     else if(r_recv_cnt == 1)
-        r_checksum <= 16'h4500 + w_upper_len +
+        r_checksum <= 16'h4500 + w_ip_byte_len +
                         w_upper_ID + {w_upper_flags,w_upper_offset} + 
                         {8'd128,w_upper_type} + 16'd0 + 
                         r_dynamic_src_ip[31:16] + r_dynamic_src_ip[15:0] + 
@@ -180,6 +220,7 @@ always @(posedge i_clk or posedge i_rst)begin
     else
         r_checksum <= r_checksum;
 end
+
 //接受计数器，用于计算首部校验和
 always @(posedge i_clk or posedge i_rst)begin
     if(i_rst)
@@ -196,7 +237,7 @@ always @(posedge i_clk or posedge i_rst)begin
         r_pkt_cnt <= 'd0; 
     else if(rm_axis_mac_last)
         r_pkt_cnt <= 'd0; 
-    else if((r_pkt_cnt == 0 && !w_data_fifo_empty) || r_pkt_cnt)
+    else if((r_pkt_cnt == 0 && !w_data_fifo_empty && m_axis_mac_ready) || r_pkt_cnt)
         r_pkt_cnt <= r_pkt_cnt + 'd1; 
     else
         r_pkt_cnt <= r_pkt_cnt;
@@ -218,7 +259,7 @@ always @(posedge i_clk or posedge i_rst)begin
         rm_axis_mac_data <= 'd0;
     else
         case (r_pkt_cnt)
-            0       : rm_axis_mac_data <= {4'b0100,4'b0101,8'd0,{w_upper_len},
+            0       : rm_axis_mac_data <= {4'b0100,4'b0101,8'd0,{w_ip_byte_len},
                                             w_upper_ID,w_upper_flags,w_upper_offset};
 
             1       : rm_axis_mac_data <= {8'd128,w_upper_type,(~r_checksum[15:0]),
@@ -236,7 +277,7 @@ always @(posedge i_clk or posedge i_rst)begin
         rm_axis_mac_valid <= 'd0;
     else if(rm_axis_mac_last)
         rm_axis_mac_valid <= 'd0;
-    else if(r_pkt_cnt == 0 && !w_data_fifo_empty)
+    else if(r_pkt_cnt == 0 && !w_data_fifo_empty && m_axis_mac_ready)
         rm_axis_mac_valid <= 'd1;
     else
         rm_axis_mac_valid <= rm_axis_mac_valid;
@@ -288,14 +329,14 @@ end
 always @(posedge i_clk or posedge i_rst)begin
     if(i_rst)
         rm_axis_mac_user <= 'd0;
-    else if(rs_axis_upper_valid & !rs_axis_upper_valid_1d)
-        rm_axis_mac_user <= {w_upper_64bit_len,48'd0,16'h0800}; 
+    else if(i_seek_mac_valid)
+        rm_axis_mac_user <= {w_ip_byte_len,i_seek_mac,16'h0800}; 
 end
 
 //当前数据发完，上层数据可以继续发送
 always @(posedge i_clk or posedge i_rst)begin
     if(i_rst)
-        rs_axis_upper_ready <= 'd0;
+        rs_axis_upper_ready <= 'd1;
     else if(s_axis_upper_last)
         rs_axis_upper_ready <= 'd0;
     else if(rm_axis_mac_last)

@@ -25,14 +25,15 @@ module AXIS_test_module(
     input           i_rst   ,
 
     output [63:0]   m_axis_tdata        ,
-    output [79:0]   m_axis_tuser        ,
+    // output [79:0]   m_axis_tuser        ,
+    output [31:0]   m_axis_tuser        ,
     output [7 :0]   m_axis_tkeep        ,
     output          m_axis_tlast        ,
     output          m_axis_tvalid       ,
     input           s_axis_tready       
 );
 
-localparam      P_SEND_LEN = 16'd186;
+localparam      P_SEND_LEN = 16'd16;
 
 reg  [63:0]     rm_axis_tdata     ;
 reg  [79:0]     rm_axis_tuser     ;
@@ -45,6 +46,8 @@ reg  [15:0]     r_send_cnt      ;
 reg  [7 :0]     r_pkt_cnt       ;
 
 wire w_axis_active  ;
+wire [15:0] w_byte_len ;
+assign w_byte_len = 8 * (P_SEND_LEN - 1) + r_pkt_cnt + 1;
 
 assign w_axis_active = rm_axis_tvalid & s_axis_tready;
 
@@ -58,8 +61,8 @@ assign m_axis_tvalid = rm_axis_tvalid ;
 always @(posedge i_clk or posedge i_rst) begin
     if(i_rst)
         r_pkt_cnt <= 'd0;
-    else if(r_pkt_cnt == 10)
-        r_pkt_cnt <= r_pkt_cnt;
+    else if(r_pkt_cnt == 7)
+        r_pkt_cnt <= 'd0;
     else if(rm_axis_tlast && rm_axis_tvalid)
         r_pkt_cnt <= r_pkt_cnt + 'd1;
     else
@@ -112,14 +115,14 @@ always @(posedge i_clk or posedge i_rst) begin
     if(i_rst)
         rm_axis_tuser <= 'd0;
     else
-        rm_axis_tuser <= {P_SEND_LEN,48'h0102_0304_0506,16'h0800};  
+        rm_axis_tuser <= {16'd0,w_byte_len};  
 end
 
 always @(posedge i_clk or posedge i_rst) begin
     if(i_rst)
         rm_axis_tdata <= 'd0;
     else if(w_axis_active)
-        rm_axis_tdata <= {4{r_send_cnt}};
+        rm_axis_tdata <= {4{r_send_cnt + 16'd1}};
     else
         rm_axis_tdata <= rm_axis_tdata; 
 end
@@ -131,14 +134,14 @@ always @(posedge i_clk or posedge i_rst) begin
         rm_axis_tkeep <= 8'hff;
     else if(r_send_cnt == P_SEND_LEN - 2 && w_axis_active)
         case (r_pkt_cnt)
-            0   : rm_axis_tkeep <= 8'b1111_1111;
-            1   : rm_axis_tkeep <= 8'b1111_1110;
-            2   : rm_axis_tkeep <= 8'b1111_1100;
-            3   : rm_axis_tkeep <= 8'b1111_1000;
-            4   : rm_axis_tkeep <= 8'b1111_0000;
-            5   : rm_axis_tkeep <= 8'b1110_0000;
-            6   : rm_axis_tkeep <= 8'b1100_0000;
-            7   : rm_axis_tkeep <= 8'b1000_0000;
+            7   : rm_axis_tkeep <= 8'b1111_1111;
+            6   : rm_axis_tkeep <= 8'b1111_1110;
+            5   : rm_axis_tkeep <= 8'b1111_1100;
+            4   : rm_axis_tkeep <= 8'b1111_1000;
+            3   : rm_axis_tkeep <= 8'b1111_0000;
+            2   : rm_axis_tkeep <= 8'b1110_0000;
+            1   : rm_axis_tkeep <= 8'b1100_0000;
+            0   : rm_axis_tkeep <= 8'b1000_0000;
             default: rm_axis_tkeep <= 8'b1111_1111;
         endcase
         

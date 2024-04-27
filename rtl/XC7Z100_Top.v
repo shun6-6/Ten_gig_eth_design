@@ -50,30 +50,41 @@ wire            w_qpllreset     ;
 
 wire            w_xgmii_clk     ;
 wire            w_xgmii_rst     ;
-(* MARK_DEBUG = "TRUE" *)wire [63 : 0]   w_xgmii_txd     ;
-(* MARK_DEBUG = "TRUE" *)wire [7  : 0]   w_xgmii_txc     ;
-(* MARK_DEBUG = "TRUE" *)wire [63 : 0]   w_xgmii_rxd     ;
-(* MARK_DEBUG = "TRUE" *)wire [7  : 0]   w_xgmii_rxc     ;
+wire [63 : 0]   w_xgmii_txd     ;
+wire [7  : 0]   w_xgmii_txc     ;
+wire [63 : 0]   w_xgmii_rxd     ;
+wire [7  : 0]   w_xgmii_rxc     ;
 
 wire            w_block_sync    ;
 wire            w_rst_done      ;
 wire            w_pma_link      ;
 wire            w_pcs_rx_link   ;
 
-(* MARK_DEBUG = "TRUE" *)wire [63:0]     m_axis_rdata        ;
-(* MARK_DEBUG = "TRUE" *)wire [79:0]     m_axis_ruser        ;
-(* MARK_DEBUG = "TRUE" *)wire [7 :0]     m_axis_rkeep        ;
-(* MARK_DEBUG = "TRUE" *)wire            m_axis_rlast        ;
-(* MARK_DEBUG = "TRUE" *)wire            m_axis_rvalid       ;
-(* MARK_DEBUG = "TRUE" *)wire            w_crc_error         ;
-(* MARK_DEBUG = "TRUE" *)wire            w_crc_valid         ;
+// wire [63:0]     m_axis_rdata        ;
+// wire [79:0]     m_axis_ruser        ;
+// wire [7 :0]     m_axis_rkeep        ;
+// wire            m_axis_rlast        ;
+// wire            m_axis_rvalid       ;
+// wire            w_crc_error         ;
+// wire            w_crc_valid         ;
 
-wire [63:0]     s_axis_tdata        ;
-wire [79:0]     s_axis_tuser        ;
-wire [7 :0]     s_axis_tkeep        ;
-wire            s_axis_tlast        ;
-wire            s_axis_tvalid       ;
-wire            s_axis_tready       ;
+// wire [63:0]     s_axis_tdata        ;
+// wire [79:0]     s_axis_tuser        ;
+// wire [7 :0]     s_axis_tkeep        ;
+// wire            s_axis_tlast        ;
+// wire            s_axis_tvalid       ;
+// wire            s_axis_tready       ;
+wire [63:0]     wm_axis_user_data   ;
+wire [31:0]     wm_axis_user_user   ;
+wire [7 :0]     wm_axis_user_keep   ;
+wire            wm_axis_user_last   ;
+wire            wm_axis_user_valid  ;
+wire [63:0]     ws_axis_user_data   ;
+wire [31:0]     ws_axis_user_user   ;
+wire [7 :0]     ws_axis_user_keep   ;
+wire            ws_axis_user_last   ;
+wire            ws_axis_user_valid  ;
+wire            ws_axis_user_ready  ;
 
 
 IBUFDS #(
@@ -139,37 +150,47 @@ ten_gig_eth_pcs_pma_gt_common_block
 //     .s_axis_tready          (s_axis_tready      )
 // );
 
+UDP_10G_Stack#(
+    .P_SRC_MAC        (P_SRC_MAC                    ),
+    .P_DST_MAC        (P_DST_MAC                    ),
+    .P_SRC_IP_ADDR    ({8'd192,8'd168,8'd100,8'd99} ),
+    .P_DST_IP_ADDR    ({8'd192,8'd168,8'd100,8'd100}),
+    .P_SRC_UDP_PORT   (16'h0808                     ),
+    .P_DST_UDP_PORT   (16'h0808                     )
 
-
-TEN_GIG_MAC_module #(
-    .P_SRC_MAC              (P_SRC_MAC),
-    .P_DST_MAC              (P_DST_MAC)
-)TEN_GIG_MAC_module_u0(
-    .i_xgmii_clk            (w_xgmii_clk        ),
-    .i_xgmii_rst            (w_xgmii_rst        ),
-    .i_xgmii_rxd            (w_xgmii_rxd        ),
-    .i_xgmii_rxc            (w_xgmii_rxc        ),
-    .o_xgmii_txd            (w_xgmii_txd        ),
-    .o_xgmii_txc            (w_xgmii_txc        ),
-    
-    .i_dynamic_src_mac      (48'd0),
-    .i_dynamic_src_valid    (0),
-    .i_dynamic_dst_mac      (48'd0),
-    .i_dynamic_dst_valid    (0),
-
-    .m_axis_rdata           (m_axis_rdata       ),
-    .m_axis_ruser           (m_axis_ruser       ),
-    .m_axis_rkeep           (m_axis_rkeep       ),
-    .m_axis_rlast           (m_axis_rlast       ),
-    .m_axis_rvalid          (m_axis_rvalid      ),
-    .o_crc_error            (w_crc_error        ),
-    .o_crc_valid            (w_crc_valid        ),
-    .s_axis_tdata           (s_axis_tdata       ),
-    .s_axis_tuser           (s_axis_tuser       ),
-    .s_axis_tkeep           (s_axis_tkeep       ),
-    .s_axis_tlast           (s_axis_tlast       ),
-    .s_axis_tvalid          (s_axis_tvalid      ),
-    .s_axis_tready          (s_axis_tready      )
+)UDP_10G_Stack_u0(
+    .i_xgmii_clk                (w_xgmii_clk        ),
+    .i_xgmii_rst                (w_xgmii_rst        ),
+    .i_xgmii_rxd                (w_xgmii_rxd        ),
+    .i_xgmii_rxc                (w_xgmii_rxc        ),
+    .o_xgmii_txd                (w_xgmii_txd        ),
+    .o_xgmii_txc                (w_xgmii_txc        ),
+    .i_dynamic_src_mac          (0),
+    .i_dynamic_src_mac_valid    (0),
+    .i_dynamic_dst_mac          (0),
+    .i_dynamic_dst_mac_valid    (0),
+    .i_dymanic_src_port         (0),
+    .i_dymanic_src_port_valid   (0),
+    .i_dymanic_dst_port         (0),
+    .i_dymanic_dst_port_valid   (0),
+    .i_dynamic_src_ip           (0),
+    .i_dynamic_src_ip_valid     (0),
+    .i_dynamic_dst_ip           (0),
+    .i_dynamic_dst_ip_valid     (0),
+    .i_arp_active               (0),
+    .i_arp_active_dst_ip        (0),
+    /****user data****/
+    .m_axis_user_data           (wm_axis_user_data  ),
+    .m_axis_user_user           (wm_axis_user_user  ),
+    .m_axis_user_keep           (wm_axis_user_keep  ),
+    .m_axis_user_last           (wm_axis_user_last  ),
+    .m_axis_user_valid          (wm_axis_user_valid ),
+    .s_axis_user_data           (ws_axis_user_data  ),
+    .s_axis_user_user           (ws_axis_user_user  ),
+    .s_axis_user_keep           (ws_axis_user_keep  ),
+    .s_axis_user_last           (ws_axis_user_last  ),
+    .s_axis_user_valid          (ws_axis_user_valid ),
+    .s_axis_user_ready          (ws_axis_user_ready ) 
 );
 
 

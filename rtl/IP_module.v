@@ -31,6 +31,10 @@ module IP_module#(
     input           i_dynamic_src_valid ,
     input  [31:0]   i_dynamic_dst_ip    ,
     input           i_dynamic_dst_valid ,
+    output [31:0]   o_seek_ip           ,
+    output          o_seek_ip_valid     ,
+    input  [47:0]   i_seek_mac          ,
+    input           i_seek_mac_valid    ,
     /*****MAC AXIS interface*****/
     output [63:0]   m_axis_mac_data     ,
     output [79:0]   m_axis_mac_user     ,//用户自定义{16'dlen,r_src_mac[47:0],16'dr_type}
@@ -70,6 +74,10 @@ IP_TX#(
     .i_dynamic_src_valid    (i_dynamic_src_valid),
     .i_dynamic_dst_ip       (i_dynamic_dst_ip   ),
     .i_dynamic_dst_valid    (i_dynamic_dst_valid),
+    .o_seek_ip              (o_seek_ip          ),
+    .o_seek_ip_valid        (o_seek_ip_valid    ),
+    .i_seek_mac             (i_seek_mac         ),
+    .i_seek_mac_valid       (i_seek_mac_valid   ),
     .m_axis_mac_data        (m_axis_mac_data    ),
     .m_axis_mac_user        (m_axis_mac_user    ),
     .m_axis_mac_keep        (m_axis_mac_keep    ),

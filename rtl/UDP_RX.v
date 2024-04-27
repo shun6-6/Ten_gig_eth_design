@@ -65,6 +65,7 @@ reg  [15:0]     r_recv_src_port     ;
 reg  [15:0]     r_recv_dst_port     ;
 reg  [15:0]     r_recv_pkt_len      ;
 reg             r_udp_pkt_valid     ;
+reg             r_udp_access        ;
 /******************************wire*********************************/
 wire [15:0]     w_64bit_len         ;
 wire [15:0]     w_byte_len          ;
@@ -110,8 +111,19 @@ end
 
 always @(posedge i_clk or posedge i_rst) begin
     if(i_rst)
+        r_udp_pkt_valid <= 'd0;
+    else if(s_axis_ip_valid && !rs_axis_ip_valid && s_axis_ip_user[36:29] != 8'd17)
+        r_udp_pkt_valid <= r_recv_cnt + 'd0;
+    else if(s_axis_ip_valid && !rs_axis_ip_valid && s_axis_ip_user[36:29] == 8'd17)
+        r_udp_pkt_valid <= r_recv_cnt + 'd1;
+    else
+        r_udp_pkt_valid <= r_udp_pkt_valid;
+end
+
+always @(posedge i_clk or posedge i_rst) begin
+    if(i_rst)
         r_recv_cnt <= 'd0;
-    else if(rs_axis_ip_valid)
+    else if(rs_axis_ip_valid && r_udp_pkt_valid)
         r_recv_cnt <= r_recv_cnt + 'd1;
     else
         r_recv_cnt <= 'd0;
@@ -138,13 +150,13 @@ end
 
 always @(posedge i_clk or posedge i_rst) begin
     if(i_rst)
-        r_udp_pkt_valid <= 'd0;
-    else if(r_recv_cnt == 0 && rs_axis_ip_valid && rs_axis_ip_data[47:32] != ri_dymanic_src_port)
-        r_udp_pkt_valid <= 'd0;
-    else if(r_recv_cnt == 0 && rs_axis_ip_valid && rs_axis_ip_data[47:32] == ri_dymanic_src_port)
-        r_udp_pkt_valid <= 'd1;
+        r_udp_access <= 'd0;
+    else if(r_recv_cnt == 0 && rs_axis_ip_valid && rs_axis_ip_data[47:32] != ri_dymanic_src_port && r_udp_pkt_valid)
+        r_udp_access <= 'd0;
+    else if(r_recv_cnt == 0 && rs_axis_ip_valid && rs_axis_ip_data[47:32] == ri_dymanic_src_port && r_udp_pkt_valid)
+        r_udp_access <= 'd1;
     else
-        r_udp_pkt_valid <= r_udp_pkt_valid;
+        r_udp_access <= r_udp_access;
 end
 
 //长度是以8字节为单位的，因为一拍数据是64比特
@@ -196,7 +208,7 @@ always @(posedge i_clk or posedge i_rst) begin
         rm_axis_user_valid <= 'd0;
     else if(rm_axis_user_last)
         rm_axis_user_valid <= 'd0;
-    else if(r_recv_cnt == 1 && r_udp_pkt_valid)
+    else if(r_recv_cnt == 1 && r_udp_access)
         rm_axis_user_valid <= 'd1;
     else
         rm_axis_user_valid <= rm_axis_user_valid;

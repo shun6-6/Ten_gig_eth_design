@@ -21,12 +21,12 @@
 
 
 module UDP_10G_Stack#(
-    parameter       P_SRC_MAC       = 48'h00_00_00_00_00_00 ,
-    parameter       P_DST_MAC       = 48'h00_00_00_00_00_00 ,
-    parameter       P_SRC_IP_ADDR   = {8'd192,8'd168,8'd100,8'd99},
-    parameter       P_DST_IP_ADDR   = {8'd192,8'd168,8'd100,8'd100},
-    parameter       P_SRC_UDP_PORT  = 16'h0808              ,
-    parameter       P_DST_UDP_PORT  = 16'h0808              
+    parameter       P_SRC_MAC       = 48'h00_00_00_00_00_00         ,
+    parameter       P_DST_MAC       = 48'h00_00_00_00_00_00         ,
+    parameter       P_SRC_IP_ADDR   = {8'd192,8'd168,8'd100,8'd99}  ,
+    parameter       P_DST_IP_ADDR   = {8'd192,8'd168,8'd100,8'd100} ,
+    parameter       P_SRC_UDP_PORT  = 16'h0808                      ,
+    parameter       P_DST_UDP_PORT  = 16'h0808                      
 
 )(
     input           i_xgmii_clk             ,
@@ -48,20 +48,22 @@ module UDP_10G_Stack#(
     input           i_dynamic_src_ip_valid  ,
     input  [31:0]   i_dynamic_dst_ip        ,
     input           i_dynamic_dst_ip_valid  ,
+    input           i_arp_active            ,
+    input  [31:0]   i_arp_active_dst_ip     ,
 
     /****user data****/
-    output [63:0]   m_axis_user_data    ,
-    output [31:0]   m_axis_user_user    ,
-    output [7 :0]   m_axis_user_keep    ,
-    output          m_axis_user_last    ,
-    output          m_axis_user_valid   ,
+    output [63:0]   m_axis_user_data        ,
+    output [31:0]   m_axis_user_user        ,
+    output [7 :0]   m_axis_user_keep        ,
+    output          m_axis_user_last        ,
+    output          m_axis_user_valid       ,
 
-    input  [63:0]   s_axis_user_data    ,
-    input  [31:0]   s_axis_user_user    ,
-    input  [7 :0]   s_axis_user_keep    ,
-    input           s_axis_user_last    ,
-    input           s_axis_user_valid   ,
-    output          s_axis_user_ready   
+    input  [63:0]   s_axis_user_data        ,
+    input  [31:0]   s_axis_user_user        ,
+    input  [7 :0]   s_axis_user_keep        ,
+    input           s_axis_user_last        ,
+    input           s_axis_user_valid       ,
+    output          s_axis_user_ready       
 );
 
 wire [63:0]     wm_axis_mac_rdata       ;
@@ -85,17 +87,8 @@ wire [7 :0]     wm_axis_udp2ip_keep     ;
 wire            wm_axis_udp2ip_last     ;
 wire            wm_axis_udp2ip_valid    ;
 wire            wm_axis_udp2ip_ready    ;
-wire [63:0]     ws_axis_ip2udp_data     ;
-wire [55:0]     ws_axis_ip2udp_user     ;
-wire [7 :0]     ws_axis_ip2udp_keep     ;
-wire            ws_axis_ip2udp_last     ;
-wire            ws_axis_ip2udp_valid    ;
+
 //icmp
-wire [63:0]     ws_axis_ip2icmp_data    ;
-wire [55:0]     ws_axis_ip2icmp_user    ;
-wire [7 :0]     ws_axis_ip2icmp_keep    ;
-wire            ws_axis_ip2icmp_last    ;
-wire            ws_axis_ip2icmp_valid   ;
 wire [63:0]     wm_axis_icmp2ip_data    ;
 wire [55:0]     wm_axis_icmp2ip_user    ;
 wire [7 :0]     wm_axis_icmp2ip_keep    ;
@@ -127,7 +120,7 @@ wire            wm_axis_ip2mac_ready    ;
 
 //arp
 wire [31:0]     w_seek_ip               ;
-wire            w_seek_valid            ;
+wire            w_seek_ip_valid         ;
 wire [47:0]     w_seek_mac              ;
 wire            w_seek_mac_valid        ;
 wire [63:0]     wm_axis_arp2mac_data    ;
@@ -157,7 +150,7 @@ wire            w_crc_valid             ;
 UDP_module#(
     .P_SRC_UDP_PORT         (P_SRC_UDP_PORT             ),
     .P_DST_UDP_PORT         (P_DST_UDP_PORT             )
-)(
+)UDP_module_u0(
     .i_clk                  (i_xgmii_clk                ),
     .i_rst                  (i_xgmii_rst                ),
     .i_dymanic_src_port     (i_dymanic_src_port         ),
@@ -243,6 +236,10 @@ IP_module#(
     .i_dynamic_src_valid    (i_dynamic_src_ip_valid     ),
     .i_dynamic_dst_ip       (i_dynamic_dst_ip           ),
     .i_dynamic_dst_valid    (i_dynamic_dst_ip_valid     ),
+    .o_seek_ip              (w_seek_ip                  ),
+    .o_seek_ip_valid        (w_seek_ip_valid            ),
+    .i_seek_mac             (w_seek_mac                 ),
+    .i_seek_mac_valid       (w_seek_mac_valid           ),
     .m_axis_mac_data        (wm_axis_ip2mac_data        ),
     .m_axis_mac_user        (wm_axis_ip2mac_user        ),
     .m_axis_mac_keep        (wm_axis_ip2mac_keep        ),
@@ -277,10 +274,10 @@ ARP_module#(
     .i_src_ip_valid         (i_dynamic_src_ip_valid     ),
     .i_dymanic_src_mac      (i_dynamic_src_mac          ),
     .i_src_mac_valid        (i_dynamic_src_mac_valid    ),
-    .i_arp_active           (ri_arp_active              ),
-    .i_arp_active_dst_ip    (ri_arp_active_dst_ip       ),
+    .i_arp_active           (i_arp_active               ),
+    .i_arp_active_dst_ip    (i_arp_active_dst_ip        ),
     .i_seek_ip              (w_seek_ip                  ),
-    .i_seek_valid           (w_seek_valid               ),
+    .i_seek_valid           (w_seek_ip_valid            ),
     .o_seek_mac             (w_seek_mac                 ),
     .o_seek_mac_valid       (w_seek_mac_valid           ),
     .s_axis_mac_data        (wm_axis_mac2upper_data     ),
@@ -302,18 +299,18 @@ Arbiter_module#(
     .i_clk                  (i_xgmii_clk                ),
     .i_rst                  (i_xgmii_rst                ),
 
-    .s_axis_c0_data         (wm_axis_ip2mac_data        ),
-    .s_axis_c0_user         (wm_axis_ip2mac_user        ),
-    .s_axis_c0_keep         (wm_axis_ip2mac_keep        ),
-    .s_axis_c0_last         (wm_axis_ip2mac_last        ),
-    .s_axis_c0_valid        (wm_axis_ip2mac_valid       ),
-    .s_axis_c0_ready        (wm_axis_ip2mac_ready       ),
-    .s_axis_c1_data         (wm_axis_arp2mac_data       ),
-    .s_axis_c1_user         (wm_axis_arp2mac_user       ),
-    .s_axis_c1_keep         (wm_axis_arp2mac_keep       ),
-    .s_axis_c1_last         (wm_axis_arp2mac_last       ),
-    .s_axis_c1_valid        (wm_axis_arp2mac_valid      ),
-    .s_axis_c1_ready        (wm_axis_arp2mac_ready      ),
+    .s_axis_c0_data         (wm_axis_arp2mac_data       ),
+    .s_axis_c0_user         (wm_axis_arp2mac_user       ),
+    .s_axis_c0_keep         (wm_axis_arp2mac_keep       ),
+    .s_axis_c0_last         (wm_axis_arp2mac_last       ),
+    .s_axis_c0_valid        (wm_axis_arp2mac_valid      ),
+    .s_axis_c0_ready        (wm_axis_arp2mac_ready      ),
+    .s_axis_c1_data         (wm_axis_ip2mac_data        ),
+    .s_axis_c1_user         (wm_axis_ip2mac_user        ),
+    .s_axis_c1_keep         (wm_axis_ip2mac_keep        ),
+    .s_axis_c1_last         (wm_axis_ip2mac_last        ),
+    .s_axis_c1_valid        (wm_axis_ip2mac_valid       ),
+    .s_axis_c1_ready        (wm_axis_ip2mac_ready       ),
     .m_axis_out_data        (wm_axis_arbiter_mac_data   ),
     .m_axis_out_user        (wm_axis_arbiter_mac_user   ),
     .m_axis_out_keep        (wm_axis_arbiter_mac_keep   ),
@@ -338,11 +335,11 @@ TEN_GIG_MAC_module#(
     .i_dynamic_dst_mac      (i_dynamic_dst_mac          ),
     .i_dynamic_dst_valid    (i_dynamic_dst_mac_valid    ),
 
-    .m_axis_rdata           (wm_axis_mac2upper_rdata    ),
-    .m_axis_ruser           (wm_axis_mac2upper_ruser    ),//用户自定义{16'dlen,对端mac[47:0],16'dr_type}
-    .m_axis_rkeep           (wm_axis_mac2upper_rkeep    ),
-    .m_axis_rlast           (wm_axis_mac2upper_rlast    ),
-    .m_axis_rvalid          (wm_axis_mac2upper_rvalid   ),
+    .m_axis_rdata           (wm_axis_mac2upper_data     ),
+    .m_axis_ruser           (wm_axis_mac2upper_user     ),//用户自定义{16'dlen,对端mac[47:0],16'dr_type}
+    .m_axis_rkeep           (wm_axis_mac2upper_keep     ),
+    .m_axis_rlast           (wm_axis_mac2upper_last     ),
+    .m_axis_rvalid          (wm_axis_mac2upper_valid    ),
     .o_crc_error            (w_crc_error                ),
     .o_crc_valid            (w_crc_valid                ),
     .s_axis_tdata           (wm_axis_arbiter_mac_data   ),

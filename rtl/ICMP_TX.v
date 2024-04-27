@@ -71,7 +71,7 @@ begin
         r_cnt <= 'd0;
     else if(r_cnt == 4)
         r_cnt <= 'd0;
-    else if(ri_trigger || r_cnt)
+    else if((ri_trigger && m_axis_ip_ready) || r_cnt)
         r_cnt <= r_cnt + 'd1;
     else 
         r_cnt <= r_cnt;
