@@ -33,6 +33,8 @@ module ARP_module#(
     input           i_src_mac_valid     ,
     input           i_arp_active        ,
     input  [31:0]   i_arp_active_dst_ip ,
+    input           i_ip2arp_active     ,   
+    input  [31:0]   i_ip2arp_active_dst_ip,
     /*** seek mac ***/
     input  [31:0]   i_seek_ip           ,
     input           i_seek_valid        ,
@@ -86,6 +88,8 @@ ARP_TX#(
     .i_arp_reply            (w_arp_reply        ),
     .i_arp_active           (i_arp_active       ),
     .i_arp_active_dst_ip    (i_arp_active_dst_ip),
+    .i_ip2arp_active        (i_ip2arp_active            ),
+    .i_ip2arp_active_dst_ip (i_ip2arp_active_dst_ip     ),
     .m_axis_arp_data        (m_axis_arp_data    ),
     .m_axis_arp_user        (m_axis_arp_user    ),
     .m_axis_arp_keep        (m_axis_arp_keep    ),

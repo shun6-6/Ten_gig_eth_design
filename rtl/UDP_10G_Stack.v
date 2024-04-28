@@ -117,6 +117,8 @@ wire [7 :0]     wm_axis_ip2mac_keep     ;
 wire            wm_axis_ip2mac_last     ;
 wire            wm_axis_ip2mac_valid    ;
 wire            wm_axis_ip2mac_ready    ;
+wire            w_ip2arp_active         ;
+wire [31:0]     w_ip2arp_active_dst_ip  ;
 
 //arp
 wire [31:0]     w_seek_ip               ;
@@ -240,6 +242,8 @@ IP_module#(
     .o_seek_ip_valid        (w_seek_ip_valid            ),
     .i_seek_mac             (w_seek_mac                 ),
     .i_seek_mac_valid       (w_seek_mac_valid           ),
+    .o_arp_active           (w_ip2arp_active            ),
+    .o_arp_active_dst_ip    (w_ip2arp_active_dst_ip     ),
     .m_axis_mac_data        (wm_axis_ip2mac_data        ),
     .m_axis_mac_user        (wm_axis_ip2mac_user        ),
     .m_axis_mac_keep        (wm_axis_ip2mac_keep        ),
@@ -276,6 +280,8 @@ ARP_module#(
     .i_src_mac_valid        (i_dynamic_src_mac_valid    ),
     .i_arp_active           (i_arp_active               ),
     .i_arp_active_dst_ip    (i_arp_active_dst_ip        ),
+    .i_ip2arp_active        (w_ip2arp_active            ),
+    .i_ip2arp_active_dst_ip (w_ip2arp_active_dst_ip     ),
     .i_seek_ip              (w_seek_ip                  ),
     .i_seek_valid           (w_seek_ip_valid            ),
     .o_seek_mac             (w_seek_mac                 ),

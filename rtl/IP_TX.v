@@ -35,6 +35,8 @@ module IP_TX#(
     output          o_seek_ip_valid     ,
     input  [47:0]   i_seek_mac          ,
     input           i_seek_mac_valid    ,
+    output          o_arp_active        ,
+    output [31:0]   o_arp_active_dst_ip ,
     /*****MAC AXIS interface*****/
     output [63:0]   m_axis_mac_data     ,
     output [79:0]   m_axis_mac_user     ,//用户自定义{16'dlen,r_src_mac[47:0],16'dr_type}
@@ -85,21 +87,28 @@ reg  [15:0]     r_pkt_cnt           ;
 reg  [63:0]     r_data_fifo_dout    ;
 reg             r_data_fifo_empty   ;
 reg             r_data_fifo_empty_1d;
+
+reg             r_get_mac_faild     ;
+reg             r_get_mac_faild_1d  ;
+reg  [15:0]     r_pkt_byte_len      ;
+reg             ro_arp_active       ;
+reg  [31:0]     ro_arp_active_dst_ip;
 /******************************wire*********************************/
 wire [63:0]     w_data_fifo_dout    ;
 wire            w_data_fifo_full    ;
 wire            w_data_fifo_empty   ;
 //user信息 {16'dlen,3'flag,8'dtype,13'doffset,16'dID}
-wire [15:0]     w_ip_byte_len         ;
+wire [15:0]     w_ip_byte_len       ;
 wire [2 :0]     w_upper_flags       ;
 wire [7 :0]     w_upper_type        ;
 wire [12:0]     w_upper_offset      ;
 wire [15:0]     w_upper_ID          ;  
 
-wire [15:0]     w_ip_64bit_len   ;
+wire [15:0]     w_ip_64bit_len      ;
 
 wire            w_fifo_empty_pos    ;
 wire            w_fifo_empty_pos_1d ;
+wire            w_get_mac_faild     ;
 /******************************component****************************/
 FIFO_64X256 FIFO_64X256_IP_DATA_TX (
   .clk      (i_clk              ), // input wire clk
@@ -128,11 +137,15 @@ assign w_upper_ID       = rs_axis_upper_user[15 :0];
 assign w_fifo_empty_pos    = w_data_fifo_empty & !r_data_fifo_empty;
 assign w_fifo_empty_pos_1d = r_data_fifo_empty & !r_data_fifo_empty_1d;
 
-assign w_ip_64bit_len = w_ip_byte_len[2:0] == 0 ? (w_ip_byte_len >> 3)
-                            : (w_ip_byte_len >> 3) + 1 ;
+assign w_ip_64bit_len = r_pkt_byte_len[2:0] == 0 ? (r_pkt_byte_len >> 3)
+                            : (r_pkt_byte_len >> 3) + 1 ;
 
 assign o_seek_ip        = ro_seek_ip        ;  
 assign o_seek_ip_valid  = ro_seek_ip_valid  ;
+assign o_arp_active        = ro_arp_active          ;
+assign o_arp_active_dst_ip = ro_arp_active_dst_ip   ;
+assign w_get_mac_faild = i_seek_mac_valid && (&i_seek_mac) ? 1 : 
+                            (&ri_seek_mac) ? 1 : 0;
 /******************************always*******************************/
 always @(posedge i_clk or posedge i_rst)begin
     if(i_rst)
@@ -163,6 +176,7 @@ always @(posedge i_clk or posedge i_rst)begin
         r_data_fifo_empty    <= 'd1;
         r_data_fifo_empty_1d <= 'd1;
         rs_axis_upper_valid_1d <= 'd0;
+        r_get_mac_faild_1d <= 'd0;
     end
     else begin
         rs_axis_upper_data  <= s_axis_upper_data ;
@@ -174,6 +188,7 @@ always @(posedge i_clk or posedge i_rst)begin
         r_data_fifo_empty    <= w_data_fifo_empty;
         r_data_fifo_empty_1d <= r_data_fifo_empty;
         rs_axis_upper_valid_1d <= rs_axis_upper_valid;
+        r_get_mac_faild_1d <= r_get_mac_faild;
     end
 end
 
@@ -188,7 +203,7 @@ end
 always @(posedge i_clk or posedge i_rst)begin
     if(i_rst)
         ro_seek_ip_valid <= 'd0;
-    else if(s_axis_upper_valid && !rs_axis_upper_valid)
+    else if((s_axis_upper_valid && !rs_axis_upper_valid) || (r_get_mac_faild))
         ro_seek_ip_valid <= 'd1;
     else
         ro_seek_ip_valid <= 'd0;
@@ -204,13 +219,54 @@ always @(posedge i_clk or posedge i_rst)begin
         ri_seek_mac <= ri_seek_mac;
 end
 
+//当查询结果为48'hffffffffffff时，说明没有该IP对应的MAC，需要触发一次arp请求
+always @(posedge i_clk or posedge i_rst)begin
+    if(i_rst)
+        r_get_mac_faild <= 'd0;
+    else if(i_seek_mac_valid && (&i_seek_mac))
+        r_get_mac_faild <= 'd1;
+    else if(i_seek_mac_valid && !(&i_seek_mac))
+        r_get_mac_faild <= 'd0;
+    else
+        r_get_mac_faild <= r_get_mac_faild;
+end
+       
+
+always @(posedge i_clk or posedge i_rst)begin
+    if(i_rst)
+        ro_arp_active <= 'd0;
+    else if(r_get_mac_faild && !r_get_mac_faild_1d)
+        ro_arp_active <= 'd1;
+    else
+        ro_arp_active <= 'd0;
+end
+
+always @(posedge i_clk or posedge i_rst)begin
+    if(i_rst)
+        ro_arp_active_dst_ip <= 'd0;
+    else if(r_get_mac_faild && !r_get_mac_faild_1d)
+        ro_arp_active_dst_ip <= ro_seek_ip;
+    else
+        ro_arp_active_dst_ip <= ro_arp_active_dst_ip;
+end
+
+
+
+always @(posedge i_clk or posedge i_rst)begin
+    if(i_rst)
+        r_pkt_byte_len <= 'd0;
+    else if(r_recv_cnt == 0 && s_axis_upper_valid)
+        r_pkt_byte_len <= s_axis_upper_user[55:40] + 16'd20;
+    else
+        r_pkt_byte_len <= r_pkt_byte_len;
+end
 
 //计算checksum
 always @(posedge i_clk or posedge i_rst)begin
     if(i_rst)
         r_checksum <= 'd0;
     else if(r_recv_cnt == 1)
-        r_checksum <= 16'h4500 + w_ip_byte_len +
+        r_checksum <= 16'h4500 + r_pkt_byte_len +
                         w_upper_ID + {w_upper_flags,w_upper_offset} + 
                         {8'd128,w_upper_type} + 16'd0 + 
                         r_dynamic_src_ip[31:16] + r_dynamic_src_ip[15:0] + 
@@ -237,7 +293,7 @@ always @(posedge i_clk or posedge i_rst)begin
         r_pkt_cnt <= 'd0; 
     else if(rm_axis_mac_last)
         r_pkt_cnt <= 'd0; 
-    else if((r_pkt_cnt == 0 && !w_data_fifo_empty && m_axis_mac_ready) || r_pkt_cnt)
+    else if((r_pkt_cnt == 0 && !w_data_fifo_empty && m_axis_mac_ready && !w_get_mac_faild) || r_pkt_cnt)
         r_pkt_cnt <= r_pkt_cnt + 'd1; 
     else
         r_pkt_cnt <= r_pkt_cnt;
@@ -248,7 +304,7 @@ always @(posedge i_clk or posedge i_rst)begin
         r_data_fifo_rden <= 'd0;
     else if(w_data_fifo_empty)
         r_data_fifo_rden <= 'd0 ;
-    else if(r_pkt_cnt == 0 && !w_data_fifo_empty && m_axis_mac_ready)
+    else if(r_pkt_cnt == 0 && !w_data_fifo_empty && m_axis_mac_ready && !w_get_mac_faild)
         r_data_fifo_rden <= 'd1 ;
     else
         r_data_fifo_rden <= r_data_fifo_rden;
@@ -259,7 +315,7 @@ always @(posedge i_clk or posedge i_rst)begin
         rm_axis_mac_data <= 'd0;
     else
         case (r_pkt_cnt)
-            0       : rm_axis_mac_data <= {4'b0100,4'b0101,8'd0,{w_ip_byte_len},
+            0       : rm_axis_mac_data <= {4'b0100,4'b0101,8'd0,{r_pkt_byte_len},
                                             w_upper_ID,w_upper_flags,w_upper_offset};
 
             1       : rm_axis_mac_data <= {8'd128,w_upper_type,(~r_checksum[15:0]),
@@ -277,7 +333,7 @@ always @(posedge i_clk or posedge i_rst)begin
         rm_axis_mac_valid <= 'd0;
     else if(rm_axis_mac_last)
         rm_axis_mac_valid <= 'd0;
-    else if(r_pkt_cnt == 0 && !w_data_fifo_empty && m_axis_mac_ready)
+    else if(r_pkt_cnt == 0 && !w_data_fifo_empty && m_axis_mac_ready && !w_get_mac_faild)
         rm_axis_mac_valid <= 'd1;
     else
         rm_axis_mac_valid <= rm_axis_mac_valid;
@@ -330,7 +386,7 @@ always @(posedge i_clk or posedge i_rst)begin
     if(i_rst)
         rm_axis_mac_user <= 'd0;
     else if(i_seek_mac_valid)
-        rm_axis_mac_user <= {w_ip_byte_len,i_seek_mac,16'h0800}; 
+        rm_axis_mac_user <= {r_pkt_byte_len,i_seek_mac,16'h0800}; 
 end
 
 //当前数据发完，上层数据可以继续发送

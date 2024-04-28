@@ -61,7 +61,7 @@ assign m_axis_tvalid = rm_axis_tvalid ;
 always @(posedge i_clk or posedge i_rst) begin
     if(i_rst)
         r_pkt_cnt <= 'd0;
-    else if(r_pkt_cnt == 7)
+    else if(r_pkt_cnt == 7 && rm_axis_tlast)
         r_pkt_cnt <= 'd0;
     else if(rm_axis_tlast && rm_axis_tvalid)
         r_pkt_cnt <= r_pkt_cnt + 'd1;

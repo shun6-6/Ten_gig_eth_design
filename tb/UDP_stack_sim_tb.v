@@ -107,8 +107,10 @@ UDP_10G_Stack#(
     .i_dynamic_src_ip_valid     (0),
     .i_dynamic_dst_ip           (0),
     .i_dynamic_dst_ip_valid     (0),
-    .i_arp_active               (r_arp_active       ),
-    .i_arp_active_dst_ip        (r_arp_active_dst_ip),
+    // .i_arp_active               (r_arp_active       ),
+    // .i_arp_active_dst_ip        (r_arp_active_dst_ip),
+    .i_arp_active               (0),
+    .i_arp_active_dst_ip        (0),
     /****user data****/
     .m_axis_user_data           (),
     .m_axis_user_user           (),

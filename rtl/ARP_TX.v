@@ -37,6 +37,8 @@ module ARP_TX#(
     input           i_arp_reply         ,
     input           i_arp_active        ,
     input  [31:0]   i_arp_active_dst_ip ,
+    input           i_ip2arp_active         ,   
+    input  [31:0]   i_ip2arp_active_dst_ip  ,
 
     output [63:0]   m_axis_arp_data     ,
     output [79:0]   m_axis_arp_user     ,
@@ -58,6 +60,10 @@ reg  [31:0]     ri_recv_target_ip       ;
 reg             ri_arp_reply            ;
 reg             ri_arp_active           ;
 reg  [31:0]     ri_arp_active_dst_ip    ;
+reg             ri_ip2arp_active        ;
+reg  [31:0]     ri_ip2arp_active_dst_ip ;
+reg             r_active_type           ;//0:active 1:ip2arp_active
+
 reg  [63:0]     rm_axis_arp_data        ;
 reg  [79:0]     rm_axis_arp_user        ;
 //reg  [7 :0]     rm_axis_arp_keep        ;
@@ -116,10 +122,12 @@ always @(posedge i_clk or posedge i_rst) begin
     if(i_rst)begin
         ri_arp_reply  <= 'd0;
         ri_arp_active <= 'd0;
+        ri_ip2arp_active <= 'd0;
     end 
     else begin
         ri_arp_reply  <= i_arp_reply ;
         ri_arp_active <= i_arp_active;
+        ri_ip2arp_active <= i_ip2arp_active;
     end
 end
 
@@ -134,8 +142,18 @@ end
   
 always @(posedge i_clk or posedge i_rst) begin
     if(i_rst)
+        ri_ip2arp_active_dst_ip <= 'd0;
+    else if(i_ip2arp_active)
+        ri_ip2arp_active_dst_ip <= i_ip2arp_active_dst_ip;
+    else
+        ri_ip2arp_active_dst_ip <= ri_ip2arp_active_dst_ip;
+end      
+
+
+always @(posedge i_clk or posedge i_rst) begin
+    if(i_rst)
         r_arp_option <= 'd0;
-    else if(ri_arp_active)
+    else if(ri_arp_active || ri_ip2arp_active)
         r_arp_option <= P_ARP_REQUEST;
     else if(ri_arp_reply)
         r_arp_option <= P_ARP_REPLY;
@@ -143,12 +161,25 @@ always @(posedge i_clk or posedge i_rst) begin
         r_arp_option <= r_arp_option;
 end
 
+
+always @(posedge i_clk or posedge i_rst) begin
+    if(i_rst)
+        r_active_type <= 'd0;
+    else if(ri_arp_active)
+        r_active_type <= 'd0;
+    else if(ri_ip2arp_active)
+        r_active_type <= 'd1;
+    else
+        r_active_type <= r_active_type;
+end
+
+
 always @(posedge i_clk or posedge i_rst) begin
     if(i_rst)
         r_pkt_cnt <= 'd0;
     else if(r_pkt_cnt == 5)
         r_pkt_cnt <= 'd0;
-    else if(((ri_arp_reply || ri_arp_active) && m_axis_arp_ready) || r_pkt_cnt)
+    else if(((ri_arp_reply || ri_arp_active || ri_ip2arp_active) && m_axis_arp_ready) || r_pkt_cnt)
         r_pkt_cnt <= r_pkt_cnt + 'd1;
     else
         r_pkt_cnt <= r_pkt_cnt; 
@@ -159,7 +190,7 @@ always @(posedge i_clk or posedge i_rst) begin
         rm_axis_arp_data <= 'd0;   
     else
         case (r_pkt_cnt)
-            0       : rm_axis_arp_data <= ri_arp_active ?   {16'd1,16'h0800,8'd6,8'd4,P_ARP_REQUEST} : 
+            0       : rm_axis_arp_data <= (ri_arp_active || ri_ip2arp_active) ?   {16'd1,16'h0800,8'd6,8'd4,P_ARP_REQUEST} : 
                                                             {16'd1,16'h0800,8'd6,8'd4,P_ARP_REPLY} ;
 
             1       : rm_axis_arp_data <= {r_dymanic_src_mac,r_dymanic_src_ip[31:16]};
@@ -167,7 +198,8 @@ always @(posedge i_clk or posedge i_rst) begin
             2       : rm_axis_arp_data <= r_arp_option == P_ARP_REQUEST ? {r_dymanic_src_ip[15:0],48'd0}
                                                             : {r_dymanic_src_ip[15:0],ri_recv_target_mac};
 
-            3       : rm_axis_arp_data <= r_arp_option == P_ARP_REQUEST ? {ri_arp_active_dst_ip,32'd0}
+            3       : rm_axis_arp_data <= (r_arp_option == P_ARP_REQUEST) ? 
+                                                    r_active_type ? {ri_ip2arp_active_dst_ip,32'd0} : {ri_arp_active_dst_ip,32'd0}
                                                             : {ri_recv_target_ip,32'd0};   
 
             4       : rm_axis_arp_data <= 'd0;
@@ -190,7 +222,7 @@ always @(posedge i_clk or posedge i_rst) begin
         rm_axis_arp_valid <= 'd0;
     else if(rm_axis_arp_last)
         rm_axis_arp_valid <= 'd0;
-    else if((ri_arp_reply || ri_arp_active) && m_axis_arp_ready)
+    else if((ri_arp_reply || ri_arp_active || ri_ip2arp_active) && m_axis_arp_ready)
         rm_axis_arp_valid <= 'd1;
     else
         rm_axis_arp_valid <= rm_axis_arp_valid;
@@ -200,7 +232,7 @@ end
 always @(posedge i_clk or posedge i_rst) begin
     if(i_rst)
         rm_axis_arp_user <= 'd0;
-    else if(ri_arp_active)
+    else if(ri_arp_active || ri_ip2arp_active)
         rm_axis_arp_user <= {16'd48,48'hff_ff_ff_ff_ff_ff,16'h0806};
     else if(ri_arp_reply)
         rm_axis_arp_user <= {16'd48,ri_recv_target_mac,16'h0806};

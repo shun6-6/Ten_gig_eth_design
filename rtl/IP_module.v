@@ -35,6 +35,8 @@ module IP_module#(
     output          o_seek_ip_valid     ,
     input  [47:0]   i_seek_mac          ,
     input           i_seek_mac_valid    ,
+    output          o_arp_active        ,
+    output [31:0]   o_arp_active_dst_ip ,
     /*****MAC AXIS interface*****/
     output [63:0]   m_axis_mac_data     ,
     output [79:0]   m_axis_mac_user     ,//用户自定义{16'dlen,r_src_mac[47:0],16'dr_type}
@@ -78,6 +80,8 @@ IP_TX#(
     .o_seek_ip_valid        (o_seek_ip_valid    ),
     .i_seek_mac             (i_seek_mac         ),
     .i_seek_mac_valid       (i_seek_mac_valid   ),
+    .o_arp_active           (o_arp_active       ),
+    .o_arp_active_dst_ip    (o_arp_active_dst_ip),
     .m_axis_mac_data        (m_axis_mac_data    ),
     .m_axis_mac_user        (m_axis_mac_user    ),
     .m_axis_mac_keep        (m_axis_mac_keep    ),
