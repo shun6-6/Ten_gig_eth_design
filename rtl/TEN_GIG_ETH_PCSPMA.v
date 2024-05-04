@@ -55,8 +55,8 @@ wire                gttxreset               ;
 wire                gtrxreset               ;
 wire                txuserrdy               ;
 wire                reset_counter_done      ;
-(* MARK_DEBUG = "TRUE" *)wire                tx_resetdone            ;
-(* MARK_DEBUG = "TRUE" *)wire                rx_resetdone            ;
+wire                tx_resetdone            ;
+wire                rx_resetdone            ;
 
 wire [7 :0]         core_status             ;
 wire [447:0]        status_vector           ;

@@ -269,6 +269,7 @@ IP_module#(
 );
 
 ARP_module#(
+    .P_DST_IP_ADDR          (P_DST_IP_ADDR      ),
     .P_SRC_IP_ADDR          (P_SRC_IP_ADDR  ),
     .P_SRC_MAC_ADDR         (P_SRC_MAC      )
 )ARP_module_u0(

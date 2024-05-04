@@ -182,7 +182,7 @@ always @(posedge i_clk or posedge i_rst) begin
     if(i_rst)
         rm_axis_user_user <= 'd0;
     else
-        rm_axis_user_user <= {16'd0,(r_recv_pkt_len - 16'd1)};
+        rm_axis_user_user <= {16'd0,(w_byte_len - 16'd8)};
 end
 
 always @(posedge i_clk or posedge i_rst) begin

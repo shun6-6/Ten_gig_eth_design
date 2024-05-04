@@ -53,20 +53,31 @@ reg  [79:0]     rs_axis_mac_user    ;
 reg  [7 :0]     rs_axis_mac_keep    ;
 reg             rs_axis_mac_last    ;
 reg             rs_axis_mac_valid   ;
-reg  [47:0]     ro_recv_target_mac  ;
-reg  [31:0]     ro_recv_target_ip   ;
-reg             ro_recv_target_valid;
+(* MARK_DEBUG = "TRUE" *)reg  [47:0]     ro_recv_target_mac  ;
+(* MARK_DEBUG = "TRUE" *)reg  [31:0]     ro_recv_target_ip   ;
+(* MARK_DEBUG = "TRUE" *)reg             ro_recv_target_valid;
 reg  [31:0]     r_dymanic_src_ip    ;
 
 reg  [15:0]     r_recv_cnt          ;
 reg  [15:0]     r_arp_option        ;
 reg             r_arp_pkt_valid     ;
-reg             ro_arp_reply        ;
+(* MARK_DEBUG = "TRUE" *)reg             ro_arp_reply        ;
 reg  [31:0]     r_arp_target_ip     ;
 /******************************wire*********************************/
 
 /******************************component****************************/
-
+ila_arp_rx ila_arp_rx0 (
+	.clk(i_clk), // input wire clk
+	.probe0(ro_recv_target_mac  ), // input wire [47:0]  probe0  
+	.probe1(ro_recv_target_ip   ), // input wire [31:0]  probe1 
+	.probe2(ro_recv_target_valid), // input wire [0:0]  probe2 
+	.probe3(ro_arp_reply        ), // input wire [0:0]  probe3 
+	.probe4(rs_axis_mac_data    ), // input wire [63:0]  probe4 
+	.probe5(rs_axis_mac_user    ), // input wire [79:0]  probe5 
+	.probe6(rs_axis_mac_keep    ), // input wire [7:0]  probe6 
+	.probe7(rs_axis_mac_last    ), // input wire [0:0]  probe7 
+	.probe8(rs_axis_mac_valid   ) // input wire [0:0]  probe8
+);
 /******************************assign*******************************/
 assign o_recv_target_mac   = ro_recv_target_mac     ;
 assign o_recv_target_ip    = ro_recv_target_ip      ;

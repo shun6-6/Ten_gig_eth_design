@@ -21,7 +21,8 @@
 
 
 module ARP_module#(
-    parameter       P_SRC_IP_ADDR   = {8'd192,8'd168,8'd100,8'd99},
+    parameter       P_DST_IP_ADDR   = {8'd192,8'd168,8'd100,8'd100},
+    parameter       P_SRC_IP_ADDR   = {8'd192,8'd168,8'd100,8'd99 },
     parameter       P_SRC_MAC_ADDR  = 48'h01_02_03_04_05_06
 )(
     input           i_clk               ,
@@ -73,6 +74,7 @@ ARP_table ARP_table_u0(
 );
 
 ARP_TX#(
+    .P_DST_IP_ADDR          (P_DST_IP_ADDR      ),
     .P_SRC_IP_ADDR          (P_SRC_IP_ADDR      ),
     .P_SRC_MAC_ADDR         (P_SRC_MAC_ADDR     )
 )ARP_TX_u0(

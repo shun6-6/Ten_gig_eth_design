@@ -21,6 +21,7 @@
 
 
 module ARP_TX#(
+    parameter       P_DST_IP_ADDR   = {8'd192,8'd168,8'd100,8'd100},
     parameter       P_SRC_IP_ADDR   = {8'd192,8'd168,8'd100,8'd99},
     parameter       P_SRC_MAC_ADDR  = 48'h01_02_03_04_05_06
 )(
@@ -74,6 +75,7 @@ reg  [47:0]     r_dymanic_src_mac       ;
 
 reg  [15:0]     r_arp_option            ;
 reg  [15:0]     r_pkt_cnt               ;
+reg  [7 :0]     r_active_cnt            ;
 /******************************wire*********************************/
 
 /******************************component****************************/
@@ -125,15 +127,24 @@ always @(posedge i_clk or posedge i_rst) begin
         ri_ip2arp_active <= 'd0;
     end 
     else begin
-        ri_arp_reply  <= i_arp_reply ;
-        ri_arp_active <= i_arp_active;
+        ri_arp_reply  <= i_arp_reply;
+        ri_arp_active <= i_arp_active || (r_active_cnt == 200);
         ri_ip2arp_active <= i_ip2arp_active;
     end
+end
+//上电主动进arp
+always @(posedge i_clk or posedge i_rst) begin
+    if(i_rst)
+        r_active_cnt <= 'd0;
+    else if(r_active_cnt == 201)
+        r_active_cnt <= r_active_cnt;
+    else
+        r_active_cnt <= r_active_cnt + 1;
 end
 
 always @(posedge i_clk or posedge i_rst) begin
     if(i_rst)
-        ri_arp_active_dst_ip <= 'd0;
+        ri_arp_active_dst_ip <= P_DST_IP_ADDR;
     else if(i_arp_active)
         ri_arp_active_dst_ip <= i_arp_active_dst_ip;
     else

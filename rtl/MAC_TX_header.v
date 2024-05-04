@@ -31,6 +31,8 @@ module MAC_TX_header(
     output [7 :0]   o_xgmii_txc     
 );
 
+localparam      P_FRAME_IDLE    = 8'h07 ;
+
 reg  [63:0]         ri_xgmii_txd    ;
 reg  [7 :0]         ri_xgmii_txc    ;
 reg  [63:0]         ro_xgmii_txd    ;
@@ -54,8 +56,8 @@ assign w_eof = (ri_xgmii_txc[0] && ri_xgmii_txd[7 :  0] == 8'hFD) ||
 always@(posedge i_clk,posedge i_rst)
 begin
     if(i_rst) begin
-        ri_xgmii_txd <= 'd0;
-        ri_xgmii_txc <= 'd0;
+        ri_xgmii_txd <= {8{P_FRAME_IDLE}};
+        ri_xgmii_txc <= 8'b1111_1111;
     end else begin
         ri_xgmii_txd <= i_xgmii_txd;
         ri_xgmii_txc <= i_xgmii_txc;
@@ -77,7 +79,7 @@ end
 always@(posedge i_clk,posedge i_rst)
 begin
     if(i_rst)    
-        ro_xgmii_txd <= 'd0;
+        ro_xgmii_txd <= {8{P_FRAME_IDLE}};
     else if(w_sof)
         ro_xgmii_txd <= {ri_xgmii_txd[63:8],i_xgmii_txd[63:56]};
     else if(r_run)
@@ -89,7 +91,7 @@ end
 always@(posedge i_clk,posedge i_rst)
 begin
     if(i_rst)  
-        ro_xgmii_txc <= 'd0;
+        ro_xgmii_txc <= 8'b1111_1111;
     else if(w_sof)       
         ro_xgmii_txc <= ri_xgmii_txc;
     else 

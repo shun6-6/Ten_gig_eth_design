@@ -86,6 +86,7 @@ reg             r_mac_check         ;
 
 reg             r_sof               ;
 reg             r_eof               ;
+reg             r_eof_1d            ;
 reg  [2 :0]     r_sof_location      ;
 reg  [2 :0]     r_eof_location      ;
 //CRC处理
@@ -122,6 +123,28 @@ wire [31:0]     w_crc_7             ;
 
 wire [31:0]     w_crc_recv          ;
 /******************************component****************************/
+ila_mac_rx ila_mac_rx0 (
+	.clk(i_clk), // input wire clk
+	.probe0 (ri_xgmii_rxd), // input wire [63:0]  probe0  
+	.probe1 (ri_xgmii_rxc), // input wire [7:0]  probe1 
+	.probe2 (r_crc_result), // input wire [31:0]  probe2 
+	.probe3 (w_crc_recv), // input wire [31:0]  probe3 
+	.probe4 (ro_crc_valid), // input wire [0:0]  probe4 
+	.probe5 (r_comma), // input wire [0:0]  probe5 
+	.probe6 (r_mac_check), // input wire [0:0]  probe6 
+	.probe7 (r_sof         ), // input wire [0:0]  probe7 
+	.probe8 (r_eof         ), // input wire [0:0]  probe8 
+	.probe9 (r_sof_location), // input wire [2:0]  probe9 
+	.probe10(r_eof_location), // input wire [2:0]  probe10 
+	.probe11(m_axis_rdata ), // input wire [63:0]  probe11 
+	.probe12(m_axis_ruser ), // input wire [79:0]  probe12 
+	.probe13(m_axis_rkeep ), // input wire [7:0]  probe13 
+	.probe14(m_axis_rlast ), // input wire [0:0]  probe14 
+	.probe15(m_axis_rvalid), // input wire [0:0]  probe15 
+	.probe16(r_data_run), // input wire [0:0]  probe16 
+	.probe17(r_recv_cnt) // input wire [15:0]  probe17
+);
+
 CRC32_64bKEEP CRC32_64bKEEP_u0(
   .i_clk        (i_clk              ),
   .i_rst        (i_rst              ),
@@ -206,6 +229,7 @@ always @(posedge i_clk or posedge i_rst)begin
         ri_xgmii_rxc_1d <= 'd0;
         ri_xgmii_rxd_2d <= 'd0;
         ri_xgmii_rxc_2d <= 'd0;
+        r_eof_1d <= 'd0;
     end
     else begin
         ri_xgmii_rxd    <= i_xgmii_rxd      ;
@@ -214,6 +238,7 @@ always @(posedge i_clk or posedge i_rst)begin
         ri_xgmii_rxc_1d <= ri_xgmii_rxc     ;
         ri_xgmii_rxd_2d <= ri_xgmii_rxd_1d;
         ri_xgmii_rxc_2d <= ri_xgmii_rxc_1d;
+        r_eof_1d <= r_eof;
     end
 end
 
@@ -325,7 +350,7 @@ end
 always @(posedge i_clk or posedge i_rst)begin
     if(i_rst)
         r_crc_run <= 'd0;
-    else if(rm_axis_rlast)
+    else if(r_eof_1d)
         r_crc_run <= 'd0;
     else if(r_sof_location == 7 || r_sof_location == 3)
         r_crc_run <= 'd1;
@@ -522,7 +547,7 @@ end
 always @(posedge i_clk or posedge i_rst)begin
     if(i_rst)
         r_data_run <= 'd0;
-    else if(rm_axis_rlast)
+    else if(r_eof_1d)
         r_data_run <= 'd0;
     else if(r_sof_location == 7 && r_recv_cnt == 1)
         r_data_run <= 'd1;

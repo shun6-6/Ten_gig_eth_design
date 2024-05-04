@@ -58,7 +58,7 @@ reg  [7 :0]     rs_axis_mac_keep    ;
 reg             rs_axis_mac_last    ;
 reg             rs_axis_mac_valid   ;
 reg  [63:0]     rm_axis_upper_data  ;
-reg  [37:0]     rm_axis_upper_user  ;
+reg  [55:0]     rm_axis_upper_user  ;
 reg  [7 :0]     rm_axis_upper_keep  ;
 reg             rm_axis_upper_last  ;
 reg             rm_axis_upper_valid ;
@@ -225,7 +225,7 @@ end
 always @(posedge i_clk or posedge i_rst)begin
     if(i_rst)
         rm_axis_upper_keep <= 8'b1111_1111;
-    else if(s_axis_mac_last && s_axis_mac_keep <= 8'b1111_0000)
+    else if(s_axis_mac_last && s_axis_mac_keep <= 8'b1111_0000 && r_ip_access)
         case (s_axis_mac_keep)
             8'b1111_0000 : rm_axis_upper_keep <= 8'b1111_1111;
             8'b1110_0000 : rm_axis_upper_keep <= 8'b1111_1110;
@@ -233,7 +233,7 @@ always @(posedge i_clk or posedge i_rst)begin
             8'b1000_0000 : rm_axis_upper_keep <= 8'b1111_1000;
             default      : rm_axis_upper_keep <= 8'b1111_1111;
         endcase
-    else if(rs_axis_mac_last && rs_axis_mac_keep > 8'b1111_0000)
+    else if(rs_axis_mac_last && rs_axis_mac_keep > 8'b1111_0000 && r_ip_access)
         case (rs_axis_mac_keep)
             8'b1111_1111 : rm_axis_upper_keep <= 8'b1111_0000;
             8'b1111_1110 : rm_axis_upper_keep <= 8'b1110_0000;
@@ -248,9 +248,9 @@ end
 always @(posedge i_clk or posedge i_rst)begin
     if(i_rst)
         rm_axis_upper_last <= 'd0;
-    else if(s_axis_mac_last && s_axis_mac_keep <= 8'b1111_0000)
+    else if(s_axis_mac_last && s_axis_mac_keep <= 8'b1111_0000 && r_ip_access)
         rm_axis_upper_last <= 'd1;
-    else if(rs_axis_mac_last && rs_axis_mac_keep > 8'b1111_0000)
+    else if(rs_axis_mac_last && rs_axis_mac_keep > 8'b1111_0000 && r_ip_access)
         rm_axis_upper_last <= 'd1;
     else
         rm_axis_upper_last <= 'd0; 

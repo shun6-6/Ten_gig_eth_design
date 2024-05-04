@@ -22,7 +22,6 @@
 
 module XC7Z100_Top#(
     parameter       P_SRC_MAC = 48'h01_02_03_04_05_06,
-    //parameter       P_DST_MAC = 48'h3c_fd_fe_d2_37_0a
     parameter       P_DST_MAC = 48'hff_ff_ff_ff_ff_ff
 )(
     input           i_sys_clk_p     ,
@@ -60,31 +59,17 @@ wire            w_rst_done      ;
 wire            w_pma_link      ;
 wire            w_pcs_rx_link   ;
 
-// wire [63:0]     m_axis_rdata        ;
-// wire [79:0]     m_axis_ruser        ;
-// wire [7 :0]     m_axis_rkeep        ;
-// wire            m_axis_rlast        ;
-// wire            m_axis_rvalid       ;
-// wire            w_crc_error         ;
-// wire            w_crc_valid         ;
-
-// wire [63:0]     s_axis_tdata        ;
-// wire [79:0]     s_axis_tuser        ;
-// wire [7 :0]     s_axis_tkeep        ;
-// wire            s_axis_tlast        ;
-// wire            s_axis_tvalid       ;
-// wire            s_axis_tready       ;
-wire [63:0]     wm_axis_user_data   ;
-wire [31:0]     wm_axis_user_user   ;
-wire [7 :0]     wm_axis_user_keep   ;
-wire            wm_axis_user_last   ;
-wire            wm_axis_user_valid  ;
-wire [63:0]     ws_axis_user_data   ;
-wire [31:0]     ws_axis_user_user   ;
-wire [7 :0]     ws_axis_user_keep   ;
-wire            ws_axis_user_last   ;
-wire            ws_axis_user_valid  ;
-wire            ws_axis_user_ready  ;
+(* MARK_DEBUG = "TRUE" *)wire [63:0]     wm_axis_user_data   ;
+(* MARK_DEBUG = "TRUE" *)wire [31:0]     wm_axis_user_user   ;
+(* MARK_DEBUG = "TRUE" *)wire [7 :0]     wm_axis_user_keep   ;
+(* MARK_DEBUG = "TRUE" *)wire            wm_axis_user_last   ;
+(* MARK_DEBUG = "TRUE" *)wire            wm_axis_user_valid  ;
+(* MARK_DEBUG = "TRUE" *)wire [63:0]     ws_axis_user_data   ;
+(* MARK_DEBUG = "TRUE" *)wire [31:0]     ws_axis_user_user   ;
+(* MARK_DEBUG = "TRUE" *)wire [7 :0]     ws_axis_user_keep   ;
+(* MARK_DEBUG = "TRUE" *)wire            ws_axis_user_last   ;
+(* MARK_DEBUG = "TRUE" *)wire            ws_axis_user_valid  ;
+(* MARK_DEBUG = "TRUE" *)wire            ws_axis_user_ready  ;
 
 
 IBUFDS #(
@@ -139,35 +124,35 @@ ten_gig_eth_pcs_pma_gt_common_block
     .qplloutrefclk          (w_qplloutrefclk    )
 );
 
-// AXIS_test_module AXIS_test_module_u0(
-//     .i_clk                  (w_xgmii_clk        ),
-//     .i_rst                  (w_xgmii_rst || (!w_block_sync)),
-//     .m_axis_tdata           (s_axis_tdata       ),
-//     .m_axis_tuser           (s_axis_tuser       ),
-//     .m_axis_tkeep           (s_axis_tkeep       ),
-//     .m_axis_tlast           (s_axis_tlast       ),
-//     .m_axis_tvalid          (s_axis_tvalid      ),
-//     .s_axis_tready          (s_axis_tready      )
-// );
+AXIS_test_module AXIS_test_module_u0(
+    .i_clk                  (w_xgmii_clk        ),
+    .i_rst                  (w_xgmii_rst || (!w_block_sync)),
+    .m_axis_tdata           (ws_axis_user_data  ),
+    .m_axis_tuser           (ws_axis_user_user  ),
+    .m_axis_tkeep           (ws_axis_user_keep  ),
+    .m_axis_tlast           (ws_axis_user_last  ),
+    .m_axis_tvalid          (ws_axis_user_valid ),
+    .s_axis_tready          (ws_axis_user_ready )
+);
 
 UDP_10G_Stack#(
     .P_SRC_MAC        (P_SRC_MAC                    ),
     .P_DST_MAC        (P_DST_MAC                    ),
-    .P_SRC_IP_ADDR    ({8'd192,8'd168,8'd100,8'd99} ),
-    .P_DST_IP_ADDR    ({8'd192,8'd168,8'd100,8'd100}),
-    .P_SRC_UDP_PORT   (16'h0808                     ),
-    .P_DST_UDP_PORT   (16'h0808                     )
+    .P_SRC_IP_ADDR    ({8'd192,8'd168,8'd100,8'd100} ),
+    .P_DST_IP_ADDR    ({8'd192,8'd168,8'd100,8'd90}),
+    .P_SRC_UDP_PORT   (16'h8080                     ),
+    .P_DST_UDP_PORT   (16'h8080                     )
 
 )UDP_10G_Stack_u0(
     .i_xgmii_clk                (w_xgmii_clk        ),
-    .i_xgmii_rst                (w_xgmii_rst        ),
+    .i_xgmii_rst                (w_xgmii_rst || (!w_block_sync)),
     .i_xgmii_rxd                (w_xgmii_rxd        ),
     .i_xgmii_rxc                (w_xgmii_rxc        ),
     .o_xgmii_txd                (w_xgmii_txd        ),
     .o_xgmii_txc                (w_xgmii_txc        ),
-    .i_dynamic_src_mac          (0),
+    .i_dynamic_src_mac          (48'd0),
     .i_dynamic_src_mac_valid    (0),
-    .i_dynamic_dst_mac          (0),
+    .i_dynamic_dst_mac          (48'd0),
     .i_dynamic_dst_mac_valid    (0),
     .i_dymanic_src_port         (0),
     .i_dymanic_src_port_valid   (0),
@@ -180,6 +165,19 @@ UDP_10G_Stack#(
     .i_arp_active               (0),
     .i_arp_active_dst_ip        (0),
     /****user data****/
+    //回环模式
+    // .m_axis_user_data           (wm_axis_user_data  ),
+    // .m_axis_user_user           (wm_axis_user_user  ),
+    // .m_axis_user_keep           (wm_axis_user_keep  ),
+    // .m_axis_user_last           (wm_axis_user_last  ),
+    // .m_axis_user_valid          (wm_axis_user_valid ),
+    // .s_axis_user_data           (wm_axis_user_data  ),
+    // .s_axis_user_user           (wm_axis_user_user  ),
+    // .s_axis_user_keep           (wm_axis_user_keep  ),
+    // .s_axis_user_last           (wm_axis_user_last  ),
+    // .s_axis_user_valid          (wm_axis_user_valid ),
+    // .s_axis_user_ready          ( ) 
+    //板卡主动发送模式
     .m_axis_user_data           (wm_axis_user_data  ),
     .m_axis_user_user           (wm_axis_user_user  ),
     .m_axis_user_keep           (wm_axis_user_keep  ),
