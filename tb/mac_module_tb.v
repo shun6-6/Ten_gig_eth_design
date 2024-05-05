@@ -242,7 +242,7 @@ ICMP_Module ICMP_Module_u0(
     .m_axis_ip_keep        (),
     .m_axis_ip_last        (),
     .m_axis_ip_valid       (),
-    .m_axis_ip_ready       ()
+    .m_axis_ip_ready       (1)
 );
 
 wire [63:0]   wm_axis_ip2udp_data ;
@@ -681,7 +681,7 @@ begin:icmp_send_task
     rs_axis_ip2icmp_last  <= 'd0;
     rs_axis_ip2icmp_valid <= 'd0;
     @(posedge clk);
-    rs_axis_ip2icmp_data  <= {16'h0800,16'h0000,16'd1,16'd2};
+    rs_axis_ip2icmp_data  <= {16'h0800,16'h0000,16'd1,16'd162};
     rs_axis_ip2icmp_user  <= {16'd5,3'b010,8'd1,13'd0,16'd1};
     rs_axis_ip2icmp_keep  <= 8'b1111_1111;
     rs_axis_ip2icmp_last  <= 'd0;

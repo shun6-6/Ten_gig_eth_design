@@ -166,29 +166,29 @@ UDP_10G_Stack#(
     .i_arp_active_dst_ip        (0),
     /****user data****/
     //回环模式
-    // .m_axis_user_data           (wm_axis_user_data  ),
-    // .m_axis_user_user           (wm_axis_user_user  ),
-    // .m_axis_user_keep           (wm_axis_user_keep  ),
-    // .m_axis_user_last           (wm_axis_user_last  ),
-    // .m_axis_user_valid          (wm_axis_user_valid ),
-    // .s_axis_user_data           (wm_axis_user_data  ),
-    // .s_axis_user_user           (wm_axis_user_user  ),
-    // .s_axis_user_keep           (wm_axis_user_keep  ),
-    // .s_axis_user_last           (wm_axis_user_last  ),
-    // .s_axis_user_valid          (wm_axis_user_valid ),
-    // .s_axis_user_ready          ( ) 
-    //板卡主动发送模式
     .m_axis_user_data           (wm_axis_user_data  ),
     .m_axis_user_user           (wm_axis_user_user  ),
     .m_axis_user_keep           (wm_axis_user_keep  ),
     .m_axis_user_last           (wm_axis_user_last  ),
     .m_axis_user_valid          (wm_axis_user_valid ),
-    .s_axis_user_data           (ws_axis_user_data  ),
-    .s_axis_user_user           (ws_axis_user_user  ),
-    .s_axis_user_keep           (ws_axis_user_keep  ),
-    .s_axis_user_last           (ws_axis_user_last  ),
-    .s_axis_user_valid          (ws_axis_user_valid ),
-    .s_axis_user_ready          (ws_axis_user_ready ) 
+    .s_axis_user_data           (wm_axis_user_data  ),
+    .s_axis_user_user           (wm_axis_user_user  ),
+    .s_axis_user_keep           (wm_axis_user_keep  ),
+    .s_axis_user_last           (wm_axis_user_last  ),
+    .s_axis_user_valid          (wm_axis_user_valid ),
+    .s_axis_user_ready          ( ) 
+    //板卡主动发送模式
+    // .m_axis_user_data           (wm_axis_user_data  ),
+    // .m_axis_user_user           (wm_axis_user_user  ),
+    // .m_axis_user_keep           (wm_axis_user_keep  ),
+    // .m_axis_user_last           (wm_axis_user_last  ),
+    // .m_axis_user_valid          (wm_axis_user_valid ),
+    // .s_axis_user_data           (ws_axis_user_data  ),
+    // .s_axis_user_user           (ws_axis_user_user  ),
+    // .s_axis_user_keep           (ws_axis_user_keep  ),
+    // .s_axis_user_last           (ws_axis_user_last  ),
+    // .s_axis_user_valid          (ws_axis_user_valid ),
+    // .s_axis_user_ready          (ws_axis_user_ready ) 
 );
 
 
