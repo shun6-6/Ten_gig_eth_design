@@ -84,6 +84,7 @@ reg  [15:0]     r_pkt_cnt_2d            ;
 reg  [15:0]     r_pkt_cnt_3d            ;
 reg             r_run                   ;
 reg             r_run_1d                ;
+reg  [5 :0]     r_run_gap               ;
 //CRC
 reg  [63:0]     r_crc_data              ;
 reg  [7 :0]     r_crc_keep              ;
@@ -263,7 +264,7 @@ always @(posedge i_clk or posedge i_rst)begin
         r_run <= 'd0;
     else if(w_eof)
         r_run <= 'd0;
-    else if(!w_fifo_user_empty && !r_run)
+    else if(!w_fifo_user_empty && !r_run && r_run_gap >= 2)
         r_run <= 'd1;
     else
         r_run <= r_run;
@@ -275,6 +276,18 @@ always @(posedge i_clk or posedge i_rst)begin
     else
         r_run_1d <= r_run;
 end
+//俩次run之间至少俩个时钟周期间隔，才能满足以太网帧间隔要求
+always @(posedge i_clk or posedge i_rst)begin
+    if(i_rst)
+        r_run_gap <= 'd1;
+    else if(r_run && !r_run_1d)
+        r_run_gap <= 'd0;
+    else if(!r_run)
+        r_run_gap <= r_run_gap + 'd1;
+    else
+        r_run_gap <= r_run_gap;
+end
+
 
 //提取长度类型和尾端keep信息
 always @(posedge i_clk or posedge i_rst)begin

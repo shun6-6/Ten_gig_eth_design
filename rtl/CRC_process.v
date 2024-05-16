@@ -45,44 +45,44 @@ module CRC_process(
 /******************************mechine******************************/
 
 /******************************reg**********************************/
-reg  [63:0]     rs_axis_rdata       ;
-reg  [79:0]     rs_axis_ruser       ;
-reg  [7 :0]     rs_axis_rkeep       ;
-reg             rs_axis_rlast       ;
-reg             rs_axis_rvalid      ;
-reg             ri_crc_error        ;
-reg             ri_crc_valid        ;
+(* MARK_DEBUG = "TRUE" *)reg  [63:0]     rs_axis_rdata       ;
+(* MARK_DEBUG = "TRUE" *)reg  [79:0]     rs_axis_ruser       ;
+(* MARK_DEBUG = "TRUE" *)reg  [7 :0]     rs_axis_rkeep       ;
+(* MARK_DEBUG = "TRUE" *)reg             rs_axis_rlast       ;
+(* MARK_DEBUG = "TRUE" *)reg             rs_axis_rvalid      ;
+(* MARK_DEBUG = "TRUE" *)reg             ri_crc_error        ;
+(* MARK_DEBUG = "TRUE" *)reg             ri_crc_valid        ;
 reg             ri_crc_error_1d     ;
 reg             ri_crc_valid_1d     ;
-reg  [63:0]     rm_axis_rdata       ;
-reg  [79:0]     rm_axis_ruser       ;
-reg  [7 :0]     rm_axis_rkeep       ;
-reg             rm_axis_rlast       ;
-reg             rm_axis_rvalid      ;
+(* MARK_DEBUG = "TRUE" *)reg  [63:0]     rm_axis_rdata       ;
+(* MARK_DEBUG = "TRUE" *)reg  [79:0]     rm_axis_ruser       ;
+(* MARK_DEBUG = "TRUE" *)reg  [7 :0]     rm_axis_rkeep       ;
+(* MARK_DEBUG = "TRUE" *)reg             rm_axis_rlast       ;
+(* MARK_DEBUG = "TRUE" *)reg             rm_axis_rvalid      ;
 
-reg  [7 :0]     r_ram_data_addra    ;
-reg  [7 :0]     r_ram_data_addrb    ;
-reg             r_ram_data_enb      ;
+(* MARK_DEBUG = "TRUE" *)reg  [7 :0]     r_ram_data_addra    ;
+(* MARK_DEBUG = "TRUE" *)reg  [7 :0]     r_ram_data_addrb    ;
+(* MARK_DEBUG = "TRUE" *)reg             r_ram_data_enb      ;
 reg             r_ram_data_enb_1d   ;
 reg             r_ram_data_enb_2d   ;
 
-reg  [4 :0]     r_ram_len_addra     ;
-reg  [4 :0]     r_ram_len_addrb     ;
-reg             r_ram_len_enb       ;
+(* MARK_DEBUG = "TRUE" *)reg  [4 :0]     r_ram_len_addra     ;
+(* MARK_DEBUG = "TRUE" *)reg  [4 :0]     r_ram_len_addrb     ;
+(* MARK_DEBUG = "TRUE" *)reg             r_ram_len_enb       ;
 reg             r_ram_len_enb_1d    ;
 
-reg  [4 :0]     r_ram_keep_addra    ;
-reg  [4 :0]     r_ram_keep_addrb    ;
-reg             r_ram_keep_enb      ;
+(* MARK_DEBUG = "TRUE" *)reg  [4 :0]     r_ram_keep_addra    ;
+(* MARK_DEBUG = "TRUE" *)reg  [4 :0]     r_ram_keep_addrb    ;
+(* MARK_DEBUG = "TRUE" *)reg             r_ram_keep_enb      ;
 reg             r_ram_keep_enb_1d   ;
 
-reg  [4 :0]     r_ram_user_addra    ;
-reg  [4 :0]     r_ram_user_addrb    ;
-reg             r_ram_user_enb      ;
+(* MARK_DEBUG = "TRUE" *)reg  [4 :0]     r_ram_user_addra    ;
+(* MARK_DEBUG = "TRUE" *)reg  [4 :0]     r_ram_user_addrb    ;
+(* MARK_DEBUG = "TRUE" *)reg             r_ram_user_enb      ;
 reg             r_ram_user_enb_1d   ;
 
-reg  [7 :0]     r_recv_flag         ;
-reg  [7 :0]     r_send_flag         ;
+(* MARK_DEBUG = "TRUE" *)reg  [7 :0]     r_recv_flag         ;
+(* MARK_DEBUG = "TRUE" *)reg  [7 :0]     r_send_flag         ;
 
 reg  [7 :0]     r_data_start_addra  ;
 reg  [4 :0]     r_len_start_addra   ;
@@ -96,10 +96,10 @@ reg  [7 :0]     r_tail_keep         ;
 reg  [63:0]     r_user              ;
 
 /******************************wire*********************************/
-wire [63:0]     w_ram_data_doutb    ;
-wire [15:0]     w_ram_len_doutb     ;
-wire [7 :0]     w_ram_keep_doutb    ;
-wire [63:0]     w_ram_user_doutb    ;
+(* MARK_DEBUG = "TRUE" *)wire [63:0]     w_ram_data_doutb    ;
+(* MARK_DEBUG = "TRUE" *)wire [15:0]     w_ram_len_doutb     ;
+(* MARK_DEBUG = "TRUE" *)wire [7 :0]     w_ram_keep_doutb    ;
+(* MARK_DEBUG = "TRUE" *)wire [63:0]     w_ram_user_doutb    ;
 /******************************component****************************/
 BRAM_SD_64X256 BRAM_SD_64X256_data (
   .clka         (i_clk              ), // input wire clka

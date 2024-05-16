@@ -142,7 +142,10 @@ ila_mac_rx ila_mac_rx0 (
 	.probe14(m_axis_rlast ), // input wire [0:0]  probe14 
 	.probe15(m_axis_rvalid), // input wire [0:0]  probe15 
 	.probe16(r_data_run), // input wire [0:0]  probe16 
-	.probe17(r_recv_cnt) // input wire [15:0]  probe17
+	.probe17(r_recv_cnt), // input wire [15:0]  probe17
+    .probe18(ro_crc_error),
+    .probe19(r_crc_run),
+    .probe20(r_crc_en)
 );
 
 CRC32_64bKEEP CRC32_64bKEEP_u0(
@@ -245,7 +248,7 @@ end
 //======================= 关键字段信息提取过程 =============================//
 
 always @(posedge i_clk or posedge i_rst)begin
-    if(i_rst || rm_axis_rlast)begin
+    if(i_rst)begin
         r_sof           <= 'd0;
         r_sof_location  <= 'd0;
     end
@@ -260,7 +263,7 @@ always @(posedge i_clk or posedge i_rst)begin
 end
 
 always @(posedge i_clk or posedge i_rst)begin
-    if(i_rst || rm_axis_rlast)begin
+    if(i_rst)begin
         r_eof           <= 'd0;
         r_eof_location  <= 'd0;
     end
@@ -339,7 +342,7 @@ always @(posedge i_clk or posedge i_rst)begin
         r_mac_check <= 'd1;
     else if(r_dst_mac == ri_dynamic_src_mac && r_recv_cnt == 2)
         r_mac_check <= 'd1;
-    else if(r_dst_mac == !ri_dynamic_src_mac && r_recv_cnt == 2)
+    else if(r_dst_mac != ri_dynamic_src_mac && r_recv_cnt == 2)
         r_mac_check <= 'd0;
     else
         r_mac_check <= r_mac_check;
@@ -350,9 +353,9 @@ end
 always @(posedge i_clk or posedge i_rst)begin
     if(i_rst)
         r_crc_run <= 'd0;
-    else if(r_eof_1d)
+    else if(r_crc_end)
         r_crc_run <= 'd0;
-    else if(r_sof_location == 7 || r_sof_location == 3)
+    else if(r_sof && (r_sof_location == 7 || r_sof_location == 3))
         r_crc_run <= 'd1;
     else
         r_crc_run <= r_crc_run;
