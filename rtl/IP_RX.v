@@ -52,30 +52,30 @@ module IP_RX#(
 /******************************reg**********************************/
 reg  [31:0]     r_dynamic_src_ip    ;
 reg  [31:0]     r_dynamic_dst_ip    ;
-reg  [63:0]     rs_axis_mac_data    ;
-reg  [79:0]     rs_axis_mac_user    ;
-reg  [7 :0]     rs_axis_mac_keep    ;
-reg             rs_axis_mac_last    ;
-reg             rs_axis_mac_valid   ;
-reg  [63:0]     rm_axis_upper_data  ;
-reg  [55:0]     rm_axis_upper_user  ;
-reg  [7 :0]     rm_axis_upper_keep  ;
-reg             rm_axis_upper_last  ;
-reg             rm_axis_upper_valid ;
+(* MARK_DEBUG = "TRUE" *)reg  [63:0]     rs_axis_mac_data    ;
+(* MARK_DEBUG = "TRUE" *)reg  [79:0]     rs_axis_mac_user    ;
+(* MARK_DEBUG = "TRUE" *)reg  [7 :0]     rs_axis_mac_keep    ;
+(* MARK_DEBUG = "TRUE" *)reg             rs_axis_mac_last    ;
+(* MARK_DEBUG = "TRUE" *)reg             rs_axis_mac_valid   ;
+(* MARK_DEBUG = "TRUE" *)reg  [63:0]     rm_axis_upper_data  ;
+(* MARK_DEBUG = "TRUE" *)reg  [55:0]     rm_axis_upper_user  ;
+(* MARK_DEBUG = "TRUE" *)reg  [7 :0]     rm_axis_upper_keep  ;
+(* MARK_DEBUG = "TRUE" *)reg             rm_axis_upper_last  ;
+(* MARK_DEBUG = "TRUE" *)reg             rm_axis_upper_valid ;
 
 reg  [15:0]     r_recv_cnt          ;
-reg  [15:0]     r_ip_total_length   ;
+(* MARK_DEBUG = "TRUE" *)reg  [15:0]     r_ip_total_length   ;
 reg  [15:0]     r_Identification    ;
-reg  [2 :0]     r_flags             ;
-reg  [12:0]     r_offset            ;
-reg  [7 :0]     r_protocol_type     ;
-reg  [31:0]     r_recv_src_ip       ;
-reg  [31:0]     r_recv_dst_ip       ;
-reg             r_ip_access         ;
+(* MARK_DEBUG = "TRUE" *)reg  [2 :0]     r_flags             ;
+(* MARK_DEBUG = "TRUE" *)reg  [12:0]     r_offset            ;
+(* MARK_DEBUG = "TRUE" *)reg  [7 :0]     r_protocol_type     ;
+(* MARK_DEBUG = "TRUE" *)reg  [31:0]     r_recv_src_ip       ;
+(* MARK_DEBUG = "TRUE" *)reg  [31:0]     r_recv_dst_ip       ;
+(* MARK_DEBUG = "TRUE" *)reg             r_ip_access         ;
 /******************************wire*********************************/
-wire        w_ip_pkt_valid  ;
-wire [15:0] w_ip_pkt_64bit_len    ;
-wire [15:0] w_ip_pkt_payload_len    ;
+(* MARK_DEBUG = "TRUE" *)wire        w_ip_pkt_valid  ;
+(* MARK_DEBUG = "TRUE" *)wire [15:0] w_ip_pkt_64bit_len    ;
+(* MARK_DEBUG = "TRUE" *)wire [15:0] w_ip_pkt_payload_len    ;
 /******************************component****************************/
 
 /******************************assign*******************************/
@@ -200,7 +200,7 @@ end
 always @(posedge i_clk or posedge i_rst)begin
     if(i_rst)
         r_ip_access <= 'd0;
-    else if(w_ip_pkt_valid && rs_axis_mac_valid && (r_recv_cnt == 1) && (s_axis_mac_data[63:32] != r_dynamic_src_ip))
+    else if((!w_ip_pkt_valid) || (rs_axis_mac_valid && (r_recv_cnt == 1) && (s_axis_mac_data[63:32] != r_dynamic_src_ip)))
         r_ip_access <= 'd0;
     else if(w_ip_pkt_valid && rs_axis_mac_valid && (r_recv_cnt == 1) && (s_axis_mac_data[63:32] == r_dynamic_src_ip))
         r_ip_access <= 'd1;

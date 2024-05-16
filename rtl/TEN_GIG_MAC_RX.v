@@ -353,8 +353,16 @@ end
 always @(posedge i_clk or posedge i_rst)begin
     if(i_rst)
         r_crc_run <= 'd0;
-    else if(r_crc_end)
+    else if(r_sof_location == 7 && w_eof && w_eof_location >= 2)
         r_crc_run <= 'd0;
+    else if(r_sof_location == 7 && r_eof && r_eof_location < 2)
+        r_crc_run <= 'd0;
+    else if(r_sof_location == 3 && w_eof && w_eof_location >= 6)
+        r_crc_run <= 'd0;
+    else if(r_sof_location == 3 && r_eof && r_eof_location < 6)
+        r_crc_run <= 'd0;
+    // else if(r_crc_end)
+    //     r_crc_run <= 'd0;
     else if(r_sof && (r_sof_location == 7 || r_sof_location == 3))
         r_crc_run <= 'd1;
     else

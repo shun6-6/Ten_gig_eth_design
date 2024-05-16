@@ -20,7 +20,9 @@
 //////////////////////////////////////////////////////////////////////////////////
 
 
-module AXIS_test_module(
+module AXIS_test_module#(
+    parameter P_SEND_PKT_LEN = 16'd408
+)(
     input           i_clk   ,
     input           i_rst   ,
 
@@ -33,7 +35,7 @@ module AXIS_test_module(
     input           s_axis_tready       
 );
 
-localparam      P_SEND_LEN = 16'd184;
+localparam      P_SEND_LEN = P_SEND_PKT_LEN;
 localparam      P_SEND_PKT_NUM = 20;
 
 reg  [63:0]     rm_axis_tdata     ;
